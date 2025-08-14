@@ -5,7 +5,7 @@ using ..tensorField
 using ..conicUtils
 using ..cellTopology
 
-function vertexMatching(tf1::TensorField2d, tf2::TensorField2d)
+function vertexMatching(tf1::TF, tf2::TF)
 
     result = MArray{Tuple{2,2}}(zeros(Int64, (2,2)))
 
@@ -45,11 +45,11 @@ function vertexMatching(tf1::TensorField2d, tf2::TensorField2d)
 end
 
 # For multiple dispatch to work out with the symmetric tensor fields.
-function vertexMatching(tf1::TensorField2dSymmetric, tf2::TensorField2dSymmetric)
+function vertexMatching(tf1::TF_Sym, tf2::TF_Sym)
     return MArray{Tuple{2,2}}(zeros(Int64, (2,2)))
 end
 
-function cellMatching(tf1::TensorField2d, tf2::TensorField2d)
+function cellMatching(tf1::TF, tf2::TF)
 
     # The order follows the constants
     result = MArray{Tuple{7}}(zeros(Int64, (7,)))
@@ -70,8 +70,8 @@ function cellMatching(tf1::TensorField2d, tf2::TensorField2d)
             for i in 1:x                
                 for k in 0:1
 
-                    c1 = getCircularPointTypeFull(tf1, i, j, t, Bool(k))
-                    c2 = getCircularPointTypeFull(tf2, i, j, t, Bool(k))
+                    c1 = getDegeneracyTypeFull(tf1, i, j, t, Bool(k))
+                    c2 = getDegeneracyTypeFull(tf2, i, j, t, Bool(k))
 
                     if c1 == c2
                         result[VECDPSAME] += 1
@@ -107,7 +107,7 @@ function cellMatching(tf1::TensorField2d, tf2::TensorField2d)
 
 end
 
-function cellMatching(tf1::TensorField2dSymmetric, tf2::TensorField2dSymmetric)
+function cellMatching(tf1::TF_Sym, tf2::TF_Sym)
 
     # We have 7 entries here so that the output matches the above method...
     result = MArray{Tuple{7}}(zeros(Int64, (7,)))
@@ -123,8 +123,8 @@ function cellMatching(tf1::TensorField2dSymmetric, tf2::TensorField2dSymmetric)
             for i in 1:x                
                 for k in 0:1
 
-                    c1 = getCriticalTypeFull(tf1, i, j, t, Bool(k))
-                    c2 = getCriticalTypeFull(tf2, i, j, t, Bool(k))
+                    c1 = getDegeneracyTypeFull(tf1, i, j, t, Bool(k))
+                    c2 = getDegeneracyTypeFull(tf2, i, j, t, Bool(k))
 
                     if c1 == c2
                         result[SAME] += 1
@@ -159,11 +159,11 @@ end
 function evaluateCompression(::Val{symmetric}, ground::String, reconstructed::String, dims::Tuple{Int64, Int64, Int64}, compressed_size::Int64 = -1) where symmetric
 
     if symmetric
-        tf1 = loadTensorField2dSymmetricFromFolder(ground, dims)
-        tf2 = loadTensorField2dSymmetricFromFolder(reconstructed, dims)
+        tf1 = loadTFFromFolderSym(ground, dims)
+        tf2 = loadTFFromFolderSym(reconstructed, dims)
     else
-        tf1 = loadTensorField2dFromFolder(ground, dims)
-        tf2 = loadTensorField2dFromFolder(reconstructed, dims)
+        tf1 = loadTFFromFolder(ground, dims)
+        tf2 = loadTFFromFolder(reconstructed, dims)
     end
 
     vertexMatching_output = vertexMatching(tf1, tf2)

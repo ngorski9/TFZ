@@ -320,7 +320,7 @@ function main()
         totalCellMatching = MArray{Tuple{7}}(zeros(Int64, (7,)))
         
         combined_visit_counts = zeros(Int64, 1)
-        tf = loadTensorField2dFromFolder(data_folder, (slice_size[1],slice_size[2],num_slices))
+        tf = loadTFFromFolder(data_folder, (slice_size[1],slice_size[2],num_slices))
 
         stdout_ = stdout
 

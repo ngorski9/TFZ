@@ -27,7 +27,7 @@ function itercount_transform(arr)
 end
 
 function compress2dNaive(containing_folder, dims, output_file, relative_error_bound, output = "../output", baseCompressor="sz3", verbose=false)
-    tf = loadTensorField2dFromFolder(containing_folder, dims)
+    tf = loadTFFromFolder(containing_folder, dims)
 
     # prepare derived attributes for compression
 
@@ -88,56 +88,8 @@ function compress2dNaive(containing_folder, dims, output_file, relative_error_bo
 
 end
 
-function compress2dSymmetricNaive(containing_folder, dims, output_file, relative_error_bound, output = "../output", baseCompressor = "sz3")
-    tf = loadTensorField2dSymmetricFromFolder(containing_folder, dims)
-
-    # prepare derived attributes for compression
-
-    min_entry, max_entry = getMinAndMax(tf)
-
-    aeb = relative_error_bound * (max_entry - min_entry)
-
-    if baseCompressor == "sz3"
-        run(`../SZ3/build/bin/sz3 -d -i $containing_folder/row_1_col_1.dat -z $output/row_1_col_1.cmp -3 $(dims[1]) $(dims[2]) $(dims[3]) -M ABS $aeb`)
-        run(`../SZ3/build/bin/sz3 -d -i $containing_folder/row_1_col_2.dat -z $output/row_1_col_2.cmp -3 $(dims[1]) $(dims[2]) $(dims[3]) -M ABS $aeb`)
-        run(`../SZ3/build/bin/sz3 -d -i $containing_folder/row_2_col_2.dat -z $output/row_2_col_2.cmp -3 $(dims[1]) $(dims[2]) $(dims[3]) -M ABS $aeb`)
-    elseif baseCompressor == "sperr"
-        run(`../SPERR/build/bin/sperr2d $containing_folder/row_1_col_1.dat -c --ftype 64 --dims $(dims[1]) $(dims[2]) --bitstream $output/row_1_col_1.cmp --pwe $aeb`)
-        run(`../SPERR/build/bin/sperr2d $containing_folder/row_1_col_2.dat -c --ftype 64 --dims $(dims[1]) $(dims[2]) --bitstream $output/row_1_col_2.cmp --pwe $aeb`)
-        run(`../SPERR/build/bin/sperr2d $containing_folder/row_2_col_2.dat -c --ftype 64 --dims $(dims[1]) $(dims[2]) --bitstream $output/row_2_col_2.cmp --pwe $aeb`)
-    else
-        println("ERROR: unrecognized base compressor $baseCompressor")
-        exit(1)
-    end
-
-    vals_file = open("$output/vals.bytes", "w")
-    write(vals_file, dims[1])
-    write(vals_file, dims[2])
-    write(vals_file, dims[3])        
-    write(vals_file, relative_error_bound)
-    close(vals_file)
-
-    cwd = pwd()
-    cd(output)
-
-    removeIfExists("$output_file.tar")
-    removeIfExists("$output_file.tar.zst")
-
-    run(`tar cvf $output_file.tar row_1_col_1.cmp row_1_col_2.cmp row_2_col_2.cmp vals.bytes`)
-    run(`zstd $output_file.tar`)
-
-    # removeIfExists("$output_file.tar")
-
-    cd(cwd)
-
-    remove("$output/row_1_col_1.cmp")
-    remove("$output/row_1_col_2.cmp")
-    remove("$output/row_2_col_2.cmp")
-    remove("$output/vals.bytes")
-end
-
 function compress2dSymmetricNaiveWithMask(containing_folder, dims, output_file, relative_error_bound, output = "../output", baseCompressor = "sz3")
-    tf = loadTensorField2dSymmetricFromFolder(containing_folder, dims)
+    tf = loaodTFFromFolderSym(containing_folder, dims)
 
     # prepare derived attributes for compression
 
@@ -210,7 +162,7 @@ end
 
 function compress2d(containing_folder, dims, output_file, relative_error_bound, output="../output", verbose=false, eigenvalue=true, eigenvector=true, baseCompressor = "sz3", do_itercounts=false)
     startTime = time()
-    tf = loadTensorField2dFromFolder(containing_folder, dims)
+    tf = loadTFFromFolder(containing_folder, dims)
     
     # prepare derived attributes for compression
 
@@ -245,7 +197,7 @@ function compress2d(containing_folder, dims, output_file, relative_error_bound, 
 
     setup1Split = time()
 
-    saveTensorField32(output, tf, "_g")
+    saveTF32(output, tf, "_g")
 
     if do_itercounts
         iteration_counts_cell = zeros(Int64, (dims[1]-1,dims[2]-1,dims[3],2))
@@ -271,8 +223,8 @@ function compress2d(containing_folder, dims, output_file, relative_error_bound, 
 
     baseCompressorSplit = time()
 
-    tf2 = loadTensorField2dFromFolder(output, dims)
-    tfIntermediate = duplicateTensorField2d(tf2)    
+    tf2 = loadTFFromFolder(output, dims)
+    tfIntermediate = duplicate(tf2)    
 
     d_intermediate = zeros(Float64, dims)
     r_intermediate = zeros(Float64, dims)
@@ -658,8 +610,8 @@ function compress2d(containing_folder, dims, output_file, relative_error_bound, 
 
                             # Process individual cells to check circular points.
                             if eigenvector
-                                groundCircularPointType = getCircularPointType(groundTensors[1],groundTensors[2],groundTensors[3])
-                                if processNewVertices && groundCircularPointType == CP_OTHER
+                                groundDegeneracyType = getDegeneracyType(groundTensors[1],groundTensors[2],groundTensors[3])
+                                if processNewVertices && groundDegeneracyType == CP_OTHER
                                     # we preserve weird degeneracies too.
 
                                     precisions[vertexCoords[1]...] = MAX_PRECISION+1
@@ -684,7 +636,7 @@ function compress2d(containing_folder, dims, output_file, relative_error_bound, 
                                         vertices_modified[3] = true
                                     end
 
-                                elseif groundCircularPointType != getCircularPointType(tf2, x, y, t, top)
+                                elseif groundDegeneracyType != getDegeneracyType(tf2, x, y, t, top)
 
                                     θe1 = abs(θ_final[vertexCoords[1]...] - θ_ground[vertexCoords[1]...])
                                     θe2 = abs(θ_final[vertexCoords[2]...] - θ_ground[vertexCoords[2]...])
@@ -705,7 +657,7 @@ function compress2d(containing_folder, dims, output_file, relative_error_bound, 
                                     θe = [θe1, θe2, θe3]
                                     ll = [θe1==0.0, θe2==0.0, θe3==0.0]
 
-                                    while groundCircularPointType != getCircularPointType(tf2, x, y, t, top)
+                                    while groundDegeneracyType != getDegeneracyType(tf2, x, y, t, top)
                                         if ll[1] && ll[2] && ll[3]
 
                                             precisions[vertexCoords[1]...] = MAX_PRECISION+1
@@ -983,8 +935,6 @@ function compress2d(containing_folder, dims, output_file, relative_error_bound, 
         end
     end
 
-    # saveTensorField64("../output/test", tf2)
-
     typeCodeBytes = huffmanEncode(vec(type_codes))
     θAndSfixBytes = huffmanEncode(vec(θ_and_sfix_codes))
     dBytes = huffmanEncode(vec(d_codes))
@@ -1081,7 +1031,7 @@ end
 
 function compress2dSymmetric(containing_folder, dims, output_file, relative_error_bound, output = "../output", baseCompressor = "sz3", do_itercounts = false)
     startTime = time()
-    tf = loadTensorField2dSymmetricFromFolder(containing_folder, dims)
+    tf = loadTFFromFolderSym(containing_folder, dims)
 
     bits = 6 # this used to be a parameter.
 
@@ -1106,7 +1056,7 @@ function compress2dSymmetric(containing_folder, dims, output_file, relative_erro
 
     setup1Split = time()
 
-    saveTensorFieldSymmetric32(output, tf, "_g")
+    saveTF32(output, tf, "_g")
 
     if baseCompressor == "sz3"
         run(`../SZ3/build/bin/sz3 -f -i $output/row_1_col_1_g.dat -z $output/row_1_col_1.cmp -o $output/row_1_col_1.dat -3 $(dims[1]) $(dims[2]) $(dims[3]) -M ABS $aeb`)
@@ -1127,7 +1077,7 @@ function compress2dSymmetric(containing_folder, dims, output_file, relative_erro
 
     baseCompressorSplit = time()
 
-    tf2 = loadTensorField2dSymmetricFromFolder(output, dims)
+    tf2 = loadTFFromFolderSym(output, dims)
     stack::Array{Tuple{Int64,Int64,Bool,Bool}} = Array{Tuple{Int64,Int64,Bool,Bool}}(undef, 0)
 
     codes = zeros(UInt64, dims)
@@ -1213,7 +1163,7 @@ function compress2dSymmetric(containing_folder, dims, output_file, relative_erro
 
                         circularPointsT1 = time()
 
-                        crit_ground = getCriticalType(tf, x, y, t, top)
+                        crit_ground = getDegeneracyType(tf, x, y, t, top)
 
                         if crit_ground == CP_OTHER
 
@@ -1297,7 +1247,7 @@ function compress2dSymmetric(containing_folder, dims, output_file, relative_erro
 
                         else
 
-                            crit_intermediate = getCriticalType(tf2, x, y, t, top)
+                            crit_intermediate = getDegeneracyType(tf2, x, y, t, top)
 
                             if crit_ground != crit_intermediate
 
@@ -1495,7 +1445,7 @@ function compress2dSymmetric(containing_folder, dims, output_file, relative_erro
                                         end
                                     end
 
-                                    crit_intermediate = getCriticalType(tf2, x, y, t, top)
+                                    crit_intermediate = getDegeneracyType(tf2, x, y, t, top)
 
                                 end
 

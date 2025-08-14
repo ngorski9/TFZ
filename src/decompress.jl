@@ -149,7 +149,7 @@ function decompress2dSymmetricNaiveWithMask(compressed_file, decompress_folder, 
     mask = huffmanDecode(huffmanBytes)
 
     if length(mask) > 0
-        tf = loadTensorField2dSymmetricFromFolder("$output/$decompress_folder", (dims[1]*dims[2]*dims[3],1,1))
+        tf = loadTFFromFolderSym("$output/$decompress_folder", (dims[1]*dims[2]*dims[3],1,1))
 
         for i in 1:(dims[1]*dims[2]*dims[3])
             if mask[i] == 0.0
@@ -159,7 +159,7 @@ function decompress2dSymmetricNaiveWithMask(compressed_file, decompress_folder, 
             end
         end
 
-        saveTensorFieldSymmetric64("$output/$decompress_folder", tf)        
+        saveTF64("$output/$decompress_folder", tf)        
     end
 
     remove("$output/row_1_col_1.cmp")
@@ -282,7 +282,7 @@ function decompress2d(compressed_file, decompress_folder, output = "../output", 
     baseDecompressorSplit = time()
 
     dims_tuple::Tuple{Int64, Int64, Int64} = (dims[1], dims[2], dims[3])
-    tf = loadTensorField2dFromFolder("$output", dims_tuple)
+    tf = loadTFFromFolder("$output", dims_tuple)
 
     read2Split = time()
 
@@ -443,40 +443,8 @@ function decompress2d(compressed_file, decompress_folder, output = "../output", 
 
     augmentSplit = time()
 
-    # tf2 = loadTensorField2dFromFolder("../output/test", dims_tuple)
-
-    # numMismatches = 0
-    # for t in 1:dims[3]
-    #     for j in 1:dims[2]
-    #         for i in 1:dims[1]
-    #             if getTensor(tf,i,j,t) != getTensor(tf2,i,j,t)
-    #                 numMismatches += 1                    
-    #                 println("mismatch at $((i,j,t))")
-    #                 println(getTensor(tf,i,j,t))
-    #                 println(decomposeTensor(getTensor(tf,i,j,t)))
-    #                 println("---")
-    #                 println(getTensor(tf2,i,j,t))
-    #                 println(decomposeTensor(getTensor(tf2,i,j,t)))
-    #                 typeCode = typeCodes[i,j,t]
-    #                 d_sign_swap = (typeCode & (3 << 6)) >> 6
-    #                 r_sign_swap = (typeCode & (3 << 4)) >> 4
-    #                 d_largest_swap = (typeCode & (3 << 2)) >> 2
-    #                 r_over_s_swap = typeCode & 3
-    #                 θCode::UInt8 = θAndSFixCodes[i,j,t] & (2^6-1)
-    #                 sFix::UInt8 = ( θAndSFixCodes[i,j,t] & (2^6+2^7) ) >> 6                    
-    #                 println(θCode)
-    #                 println(sFix)
-    #                 println((d_sign_swap,r_sign_swap,d_largest_swap,r_over_s_swap))    
-    #                 println((dCodes[i,j,t],rCodes[i,j,t],sCodes[i,j,t]))
-    #                 println("=======================")  
-    #             end
-    #         end
-    #     end
-    # end
-    # println("$numMismatches mismatches")
-
     # Save to file
-    saveTensorField64("$output/$decompress_folder", tf)
+    saveTF64("$output/$decompress_folder", tf)
 
     saveSplit = time()
 
@@ -558,7 +526,7 @@ function decompress2dSymmetric(compressed_file, decompress_folder, output = "../
 
     baseDecompressorSplit = time()
 
-    tf = loadTensorField2dSymmetricFromFolder("$output/$decompress_folder", dims_tuple)
+    tf = loadTFFromFolderSym("$output/$decompress_folder", dims_tuple)
 
     read2Split = time()
 
@@ -589,7 +557,7 @@ function decompress2dSymmetric(compressed_file, decompress_folder, output = "../
 
     augmentSplit = time()
 
-    saveTensorFieldSymmetric64("$output/$decompress_folder", tf)
+    saveTF64("$output/$decompress_folder", tf)
 
     saveSplit = time()
 
