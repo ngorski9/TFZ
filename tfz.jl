@@ -269,10 +269,10 @@ function main()
         error()
     end
 
-    if specified_num_slices && specified_slice_number
-        println("TFZ: You specified both the number of slices and a slice number. Please only specify one or the other.")
-        error()
-    end
+    # if specified_num_slices && specified_slice_number
+    #     println("TFZ: You specified both the number of slices and a slice number. Please only specify one or the other.")
+    #     error()
+    # end
 
     if specified_num_slices && !experiment
         println("TFZ: -n_slice should only be used with -experiment.")
@@ -320,10 +320,18 @@ function main()
         totalCellMatching = MArray{Tuple{7}}(zeros(Int64, (7,)))
         
         combined_visit_counts = zeros(Int64, 1)
+
+        arrays = []
         if symmetric
-            tf = loadTFFromFolderSym(data_folder, (slice_size[1],slice_size[2],num_slices))
+            array_names = ("A","B","D")
         else
-            tf = loadTFFromFolder(data_folder, (slice_size[1],slice_size[2],num_slices))
+            array_names = ("A","B","C","D")
+        end
+
+        for a in array_names
+            byte_file = open("$data_folder/$a.raw", "r")
+            push!(arrays, reshape( reinterpret( Float64, read(byte_file) ), (slice_size[1],slice_size[2],num_slices) ))
+            close(byte_file)
         end
 
         stdout_ = stdout
@@ -372,28 +380,28 @@ function main()
 
             removeIfExists("$output/slice")
             run(`mkdir $output/slice`)
-            saveArray64("$output/slice/A.raw", tf.entries[1,:,:,t])
-            saveArray64("$output/slice/B.raw", tf.entries[2,:,:,t])
+            saveArray64("$output/slice/A.raw", arrays[1][:,:,t])
+            saveArray64("$output/slice/B.raw", arrays[2][:,:,t])
             if symmetric
-                saveArray64("$output/slice/D.raw", tf.entries[3,:,:,t])
+                saveArray64("$output/slice/D.raw", arrays[3][:,:,t])
             else
-                saveArray64("$output/slice/C.raw", tf.entries[3,:,:,t])
-                saveArray64("$output/slice/D.raw", tf.entries[4,:,:,t])
+                saveArray64("$output/slice/C.raw", arrays[3][:,:,t])
+                saveArray64("$output/slice/D.raw", arrays[4][:,:,t])
             end
 
             compression_start = time()
 
             if naive
                 if symmetric
-                    compress2dSymmetricNaiveWithMask("$output/slice", (slice_size[1],slice_size[2],1), intermediate_name, eb, output, base_compressor)
+                    compress2dSymmetricNaiveWithMask("$output/slice", (slice_size[1],slice_size[2]), intermediate_name, eb, output, base_compressor)
                 else
-                    compress2dNaive("$output/slice", (slice_size[1],slice_size[2],1), intermediate_name, eb, output, base_compressor)
+                    compress2dNaive("$output/slice", (slice_size[1],slice_size[2]), intermediate_name, eb, output, base_compressor)
                 end
             else
                 if symmetric
-                    ctVector, slice_visit_counts = compress2dSymmetric("$output/slice", (slice_size[1],slice_size[2],1), intermediate_name, eb, output, base_compressor, !skipStatistics)
+                    ctVector, slice_visit_counts = compress2dSymmetric("$output/slice", (slice_size[1],slice_size[2]), intermediate_name, eb, output, base_compressor, !skipStatistics)
                 else
-                    ctVector, slice_visit_counts = compress2d("$output/slice", (slice_size[1],slice_size[2],1), intermediate_name, eb, output, false, eigenvalue, eigenvector, base_compressor, !skipStatistics)
+                    ctVector, slice_visit_counts = compress2d("$output/slice", (slice_size[1],slice_size[2]), intermediate_name, eb, output, false, eigenvalue, eigenvector, base_compressor, !skipStatistics)
                 end
 
                 ctv += ctVector
@@ -432,7 +440,7 @@ function main()
             totalDecompressionTime += dt
 
             if !skipStatistics
-                metrics = evaluateCompression(Val(symmetric), "$output/slice", "$output/$decompressed_name", (slice_size[1], slice_size[2], 1), compressed_size )
+                metrics = evaluateCompression(Val(symmetric), "$output/slice", "$output/$decompressed_name", (slice_size[1], slice_size[2]), compressed_size )
                 vertexMatching, cellMatching, bitrate, mseByRangeSquared, maxErrorByRange = metrics
 
                 if !naive
@@ -454,6 +462,9 @@ function main()
 
                         redirect_stdout(stdout_)
                         println("failed on slice $t")
+                        println(vertexMatching)
+                        println(cellMatching)
+                        println(maxErrorByRange)
 
                         if csv != ""
                             if isfile(csv)
@@ -493,7 +504,10 @@ function main()
         trialEnd = time()
         trialTime = trialEnd - trialStart
 
-        averageBitrate = totalBitrate / num_slices
+        averageBitrate = totalBitrate
+        if specified_num_slices && !specified_slice_number
+            averageBitrate = totalBitrate / num_slices
+        end
 
         if symmetric
             ratio = 192.0/averageBitrate # 192 = 64 * 3 (number of bits in a symmetric tensor)
@@ -507,7 +521,11 @@ function main()
         println("trial time: $trialTime")
 
         if !skipStatistics
-            averageMSEByRangeSquared = totalMSEByRangeSquared / (num_slices - numNoRange)
+            averageMSEByRangeSquared = totalMSEByRangeSquared
+            if specified_num_slices && !specified_slice_number
+                averageMSEByRangeSquared /= (num_slices - numNoRange)
+            end
+
             psnr = -10 * log(10, averageMSEByRangeSquared)
 
             println("psnr: $psnr")

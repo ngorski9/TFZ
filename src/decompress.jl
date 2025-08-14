@@ -30,30 +30,20 @@ function decompress2dNaive(compressed_file, decompress_folder, output = "../outp
     cd(cwd)
     
     vals_file = open("$output/vals.bytes", "r")
-    dims = reinterpret(Int64, read(vals_file, 24))
+    dims = reinterpret(Int64, read(vals_file, 16))
     bound = reinterpret(Float64, read(vals_file, 8))[1]
     close(vals_file)
 
     if baseCompressor == "sz3"
-        run(`../SZ3/build/bin/sz3 -d -z $output/A.cmp -o $output/$decompress_folder/A.raw -3 $(dims[3]) $(dims[2]) $(dims[1]) -M ABS $bound`)
-        run(`../SZ3/build/bin/sz3 -d -z $output/B.cmp -o $output/$decompress_folder/B.raw -3 $(dims[3]) $(dims[2]) $(dims[1]) -M ABS $bound`)
-        run(`../SZ3/build/bin/sz3 -d -z $output/C.cmp -o $output/$decompress_folder/C.raw -3 $(dims[3]) $(dims[2]) $(dims[1]) -M ABS $bound`)
-        run(`../SZ3/build/bin/sz3 -d -z $output/D.cmp -o $output/$decompress_folder/D.raw -3 $(dims[3]) $(dims[2]) $(dims[1]) -M ABS $bound`)
-    elseif baseCompressor == "mgard"
-        run(`../MGARD/build/bin/mgard-cpu -x -t d -c $output/A.cmp -d $output/$decompress_folder/A.raw -n 3 $(dims[3]) $(dims[2]) $(dims[1]) -m abs -e $bound -s $smoothness`)
-        run(`../MGARD/build/bin/mgard-cpu -x -t d -c $output/B.cmp -d $output/$decompress_folder/B.raw -n 3 $(dims[3]) $(dims[2]) $(dims[1]) -m abs -e $bound -s $smoothness`)
-        run(`../MGARD/build/bin/mgard-cpu -x -t d -c $output/C.cmp -d $output/$decompress_folder/C.raw -n 3 $(dims[3]) $(dims[2]) $(dims[1]) -m abs -e $bound -s $smoothness`)
-        run(`../MGARD/build/bin/mgard-cpu -x -t d -c $output/D.cmp -d $output/$decompress_folder/D.raw -n 3 $(dims[3]) $(dims[2]) $(dims[1]) -m abs -e $bound -s $smoothness`)
+        run(`../SZ3/build/bin/sz3 -d -z $output/A.cmp -o $output/$decompress_folder/A.raw -M ABS $bound`)
+        run(`../SZ3/build/bin/sz3 -d -z $output/B.cmp -o $output/$decompress_folder/B.raw -M ABS $bound`)
+        run(`../SZ3/build/bin/sz3 -d -z $output/C.cmp -o $output/$decompress_folder/C.raw -M ABS $bound`)
+        run(`../SZ3/build/bin/sz3 -d -z $output/D.cmp -o $output/$decompress_folder/D.raw -M ABS $bound`)
     elseif baseCompressor == "sperr"
         run(`../SPERR/build/bin/sperr2d $output/A.cmp -d --ftype 64 --dims $(dims[1]) $(dims[2]) --decomp_d $output/$decompress_folder/A.raw --pwe $bound`)
         run(`../SPERR/build/bin/sperr2d $output/B.cmp -d --ftype 64 --dims $(dims[1]) $(dims[2]) --decomp_d $output/$decompress_folder/B.raw --pwe $bound`)
         run(`../SPERR/build/bin/sperr2d $output/C.cmp -d --ftype 64 --dims $(dims[1]) $(dims[2]) --decomp_d $output/$decompress_folder/C.raw --pwe $bound`)
         run(`../SPERR/build/bin/sperr2d $output/D.cmp -d --ftype 64 --dims $(dims[1]) $(dims[2]) --decomp_d $output/$decompress_folder/D.raw --pwe $bound`)
-    elseif baseCompressor == "zfp"
-        run(`../zfp/build/bin/zfp -d -z $output/A.cmp -o $output/$decompress_folder/A.raw -3 $(dims[1]) $(dims[2]) $(dims[3]) -a $bound`)
-        run(`../zfp/build/bin/zfp -d -z $output/B.cmp -o $output/$decompress_folder/B.raw -3 $(dims[1]) $(dims[2]) $(dims[3]) -a $bound`)
-        run(`../zfp/build/bin/zfp -d -z $output/C.cmp -o $output/$decompress_folder/C.raw -3 $(dims[1]) $(dims[2]) $(dims[3]) -a $bound`)
-        run(`../zfp/build/bin/zfp -d -z $output/D.cmp -o $output/$decompress_folder/D.raw -3 $(dims[1]) $(dims[2]) $(dims[3]) -a $bound`)
     end
 
     remove("$output/A.cmp")
@@ -63,7 +53,6 @@ function decompress2dNaive(compressed_file, decompress_folder, output = "../outp
     remove("$output/$compressed_file.tar")
     remove("$output/vals.bytes")
 
-    return [0.0]
 end
 
 function decompress2dSymmetricNaive(compressed_file, decompress_folder, output = "../output", baseCompressor = "sz3")
@@ -84,14 +73,14 @@ function decompress2dSymmetricNaive(compressed_file, decompress_folder, output =
     cd(cwd)
     
     vals_file = open("$output/vals.bytes", "r")
-    dims = reinterpret(Int64, read(vals_file, 24))
+    dims = reinterpret(Int64, read(vals_file, 16))
     bound = reinterpret(Float64, read(vals_file, 8))[1]
     close(vals_file)
 
     if baseCompressor == "sz3"
-        run(`../SZ3/build/bin/sz3 -d -z $output/A.cmp -o $output/$decompress_folder/A.raw -3 $(dims[1]) $(dims[2]) $(dims[3]) -M ABS $bound`)
-        run(`../SZ3/build/bin/sz3 -d -z $output/B.cmp -o $output/$decompress_folder/B.raw -3 $(dims[1]) $(dims[2]) $(dims[3]) -M ABS $bound`)
-        run(`../SZ3/build/bin/sz3 -d -z $output/D.cmp -o $output/$decompress_folder/D.raw -3 $(dims[1]) $(dims[2]) $(dims[3]) -M ABS $bound`)
+        run(`../SZ3/build/bin/sz3 -d -z $output/A.cmp -o $output/$decompress_folder/A.raw -M ABS $bound`)
+        run(`../SZ3/build/bin/sz3 -d -z $output/B.cmp -o $output/$decompress_folder/B.raw -M ABS $bound`)
+        run(`../SZ3/build/bin/sz3 -d -z $output/D.cmp -o $output/$decompress_folder/D.raw -M ABS $bound`)
     elseif baseCompressor == "sperr"
         run(`../SPERR/build/bin/sperr2d $output/A.cmp -d --ftype 64 --dims $(dims[1]) $(dims[2]) --decomp_d $output/$decompress_folder/A.raw --pwe $bound`)
         run(`../SPERR/build/bin/sperr2d $output/B.cmp -d --ftype 64 --dims $(dims[1]) $(dims[2]) --decomp_d $output/$decompress_folder/B.raw --pwe $bound`)
@@ -107,7 +96,6 @@ function decompress2dSymmetricNaive(compressed_file, decompress_folder, output =
     remove("$output/$compressed_file.tar")
     remove("$output/vals.bytes")
 
-    return [0.0]
 end
 
 function decompress2dSymmetricNaiveWithMask(compressed_file, decompress_folder, output = "../output", baseCompressor = "sz3")
@@ -128,15 +116,15 @@ function decompress2dSymmetricNaiveWithMask(compressed_file, decompress_folder, 
     cd(cwd)
     
     vals_file = open("$output/vals.bytes", "r")
-    dims = reinterpret(Int64, read(vals_file, 24))
+    dims = reinterpret(Int64, read(vals_file, 16))
     bound = reinterpret(Float64, read(vals_file, 8))[1]
     huffmanBytes = read(vals_file)
     close(vals_file)
 
     if baseCompressor == "sz3"
-        run(`../SZ3/build/bin/sz3 -d -z $output/A.cmp -o $output/$decompress_folder/A.raw -3 $(dims[1]) $(dims[2]) $(dims[3]) -M ABS $bound`)
-        run(`../SZ3/build/bin/sz3 -d -z $output/B.cmp -o $output/$decompress_folder/B.raw -3 $(dims[1]) $(dims[2]) $(dims[3]) -M ABS $bound`)
-        run(`../SZ3/build/bin/sz3 -d -z $output/D.cmp -o $output/$decompress_folder/D.raw -3 $(dims[1]) $(dims[2]) $(dims[3]) -M ABS $bound`)
+        run(`../SZ3/build/bin/sz3 -d -z $output/A.cmp -o $output/$decompress_folder/A.raw -M ABS $bound`)
+        run(`../SZ3/build/bin/sz3 -d -z $output/B.cmp -o $output/$decompress_folder/B.raw -M ABS $bound`)
+        run(`../SZ3/build/bin/sz3 -d -z $output/D.cmp -o $output/$decompress_folder/D.raw -M ABS $bound`)
     elseif baseCompressor == "sperr"
         run(`../SPERR/build/bin/sperr2d $output/A.cmp -d --ftype 64 --dims $(dims[1]) $(dims[2]) --decomp_d $output/$decompress_folder/A.raw --pwe $bound`)
         run(`../SPERR/build/bin/sperr2d $output/B.cmp -d --ftype 64 --dims $(dims[1]) $(dims[2]) --decomp_d $output/$decompress_folder/B.raw --pwe $bound`)
@@ -149,9 +137,9 @@ function decompress2dSymmetricNaiveWithMask(compressed_file, decompress_folder, 
     mask = huffmanDecode(huffmanBytes)
 
     if length(mask) > 0
-        tf = loadTFFromFolderSym("$output/$decompress_folder", (dims[1]*dims[2]*dims[3],1,1))
+        tf = loadTFFromFolderSym("$output/$decompress_folder", (dims[1]*dims[2],1,1))
 
-        for i in 1:(dims[1]*dims[2]*dims[3])
+        for i in 1:(dims[1]*dims[2])
             if mask[i] == 0.0
                 tf.entries[1,i,1,1] = 0.0
                 tf.entries[2,i,1,1] = 0.0
@@ -168,7 +156,6 @@ function decompress2dSymmetricNaiveWithMask(compressed_file, decompress_folder, 
     remove("$output/$compressed_file.tar")
     remove("$output/vals.bytes")
 
-    return [0.0]
 end
 
 function decompress2d(compressed_file, decompress_folder, output = "../output", baseCompressor = "sz3")
@@ -194,7 +181,7 @@ function decompress2d(compressed_file, decompress_folder, output = "../output", 
 
     # Read in metadata
     vals_file = open("$output/vals.bytes")
-    dims = reinterpret(Int64, read(vals_file, 24))
+    dims = reinterpret(Int64, read(vals_file, 16))
     aeb = reinterpret(Float64, read(vals_file, 8))[1]
 
     # Read in quantization bytes
@@ -265,10 +252,10 @@ function decompress2d(compressed_file, decompress_folder, output = "../output", 
 
     # Decompress from SZ and load into a tensor field
     if baseCompressor == "sz3"
-        run(`../SZ3/build/bin/sz3 -f -z $output/A.cmp -o $output/A.raw -3 $(dims[1]) $(dims[2]) $(dims[3]) -M ABS $aeb`)
-        run(`../SZ3/build/bin/sz3 -f -z $output/B.cmp -o $output/B.raw -3 $(dims[1]) $(dims[2]) $(dims[3]) -M ABS $aeb`)
-        run(`../SZ3/build/bin/sz3 -f -z $output/C.cmp -o $output/C.raw -3 $(dims[1]) $(dims[2]) $(dims[3]) -M ABS $aeb`)    
-        run(`../SZ3/build/bin/sz3 -f -z $output/D.cmp -o $output/D.raw -3 $(dims[1]) $(dims[2]) $(dims[3]) -M ABS $aeb`)
+        run(`../SZ3/build/bin/sz3 -f -z $output/A.cmp -o $output/A.raw -M ABS $aeb`)
+        run(`../SZ3/build/bin/sz3 -f -z $output/B.cmp -o $output/B.raw -M ABS $aeb`)
+        run(`../SZ3/build/bin/sz3 -f -z $output/C.cmp -o $output/C.raw -M ABS $aeb`)    
+        run(`../SZ3/build/bin/sz3 -f -z $output/D.cmp -o $output/D.raw -M ABS $aeb`)
     elseif baseCompressor == "sperr"
         run(`../SPERR/build/bin/sperr2d $output/A.cmp -d --ftype 32 --dims $(dims[1]) $(dims[2]) --decomp_f $output/A.raw --pwe $aeb`)
         run(`../SPERR/build/bin/sperr2d $output/B.cmp -d --ftype 32 --dims $(dims[1]) $(dims[2]) --decomp_f $output/B.raw --pwe $aeb`)
@@ -281,7 +268,7 @@ function decompress2d(compressed_file, decompress_folder, output = "../output", 
 
     baseDecompressorSplit = time()
 
-    dims_tuple::Tuple{Int64, Int64, Int64} = (dims[1], dims[2], dims[3])
+    dims_tuple::Tuple{Int64, Int64} = (dims[1], dims[2])
     tf = loadTFFromFolder("$output", dims_tuple)
 
     read2Split = time()
@@ -293,153 +280,152 @@ function decompress2d(compressed_file, decompress_folder, output = "../output", 
     next_lossless_θ = 1
 
     # Iterate through the cells and adjust accordingly.
-    for t in 1:dims[3]
-        for j in 1:dims[2]
-            for i in 1:dims[1]
 
-                # Make sure that a change must actually be applied in the first place.
-                if !(typeCodes[i,j,t] == 0 && θAndSFixCodes[i,j,t] == 0 && dCodes[i,j,t] == 0 && rCodes[i,j,t] == 0 && sCodes[i,j,t] == 0)
+    for j in 1:dims[2]
+        for i in 1:dims[1]
 
-                    if typeCodes[i,j,t] == 255
-                        setTensor( tf, i, j, t,  SMatrix{2,2,Float64}(lossless_A[next_lossless_full], lossless_C[next_lossless_full], lossless_B[next_lossless_full], lossless_D[next_lossless_full]) )
-                        next_lossless_full += 1
+            # Make sure that a change must actually be applied in the first place.
+            if !(typeCodes[i,j] == 0 && θAndSFixCodes[i,j] == 0 && dCodes[i,j] == 0 && rCodes[i,j] == 0 && sCodes[i,j] == 0)
+
+                if typeCodes[i,j] == 255
+                    setTensor( tf, i, j,  SMatrix{2,2,Float64}(lossless_A[next_lossless_full], lossless_C[next_lossless_full], lossless_B[next_lossless_full], lossless_D[next_lossless_full]) )
+                    next_lossless_full += 1
+                else
+                    typeCode = typeCodes[i,j]
+                    θCode::UInt8 = θAndSFixCodes[i,j] & (2^6-1)
+                    sFix::UInt8 = ( θAndSFixCodes[i,j] & (2^6+2^7) ) >> 6
+
+                    tensor = getTensor(tf, i, j)
+                    d,r,s,θ = decomposeTensor(tensor)
+
+                    d = d + aeb * dCodes[i,j] / (2^MAX_PRECISION)
+                    r = r + aeb * rCodes[i,j] / (2^MAX_PRECISION)
+                    s = s + sqrt(2) * aeb * sCodes[i,j] / (2^MAX_PRECISION)
+
+                    if θCode == 2^6-1
+                        θ = lossless_θ[next_lossless_θ]
+                        next_lossless_θ += 1
                     else
-                        typeCode = typeCodes[i,j,t]
-                        θCode::UInt8 = θAndSFixCodes[i,j,t] & (2^6-1)
-                        sFix::UInt8 = ( θAndSFixCodes[i,j,t] & (2^6+2^7) ) >> 6
+                        θ = θ + 2pi / (2^6-1) * θCode
+                    end
 
-                        tensor = getTensor(tf, i, j, t)
-                        d,r,s,θ = decomposeTensor(tensor)
+                    # apply the various s fixes
+                    if s < -(sqrt(2)-1)*aeb
+                        s += sqrt(2)*aeb
+                    elseif s < 0
+                        s += (sqrt(2)-1)*aeb
+                    end
 
-                        d = d + aeb * dCodes[i,j,t] / (2^MAX_PRECISION)
-                        r = r + aeb * rCodes[i,j,t] / (2^MAX_PRECISION)
-                        s = s + sqrt(2) * aeb * sCodes[i,j,t] / (2^MAX_PRECISION)
+                    if sFix == 1
+                        s -= (sqrt(2)-1)*aeb
+                    elseif sFix == 2
+                        s += (sqrt(2)-1)*aeb
+                    end
 
-                        if θCode == 2^6-1
-                            θ = lossless_θ[next_lossless_θ]
-                            next_lossless_θ += 1
-                        else
-                            θ = θ + 2pi / (2^6-1) * θCode
-                        end
+                    # apply the swapping
+                    d_sign_swap = (typeCode & (3 << 6)) >> 6
+                    r_sign_swap = (typeCode & (3 << 4)) >> 4
+                    d_largest_swap = (typeCode & (3 << 2)) >> 2
+                    r_over_s_swap = typeCode & 3
 
-                        # apply the various s fixes
-                        if s < -(sqrt(2)-1)*aeb
-                            s += sqrt(2)*aeb
-                        elseif s < 0
-                            s += (sqrt(2)-1)*aeb
-                        end
+                    # handle signs
 
-                        if sFix == 1
-                            s -= (sqrt(2)-1)*aeb
-                        elseif sFix == 2
-                            s += (sqrt(2)-1)*aeb
-                        end
+                    if d_sign_swap == 2
+                        d = 0.0
+                        r = 0.0
+                        s = 0.0
+                    else
 
-                        # apply the swapping
-                        d_sign_swap = (typeCode & (3 << 6)) >> 6
-                        r_sign_swap = (typeCode & (3 << 4)) >> 4
-                        d_largest_swap = (typeCode & (3 << 2)) >> 2
-                        r_over_s_swap = typeCode & 3
+                        # handle signs (pt 2)
 
-                        # handle signs
-
-                        if d_sign_swap == 2
-                            d = 0.0
+                        if r_sign_swap == 1
+                            if r > 0.0
+                                r -= aeb
+                            else
+                                r += aeb
+                            end
+                        elseif r_sign_swap == 2
+                            r = 0.0
+                        elseif r_sign_swap == 3
                             r = 0.0
                             s = 0.0
-                        else
-
-                            # handle signs (pt 2)
-
-                            if r_sign_swap == 1
-                                if r > 0.0
-                                    r -= aeb
-                                else
-                                    r += aeb
-                                end
-                            elseif r_sign_swap == 2
-                                r = 0.0
-                            elseif r_sign_swap == 3
-                                r = 0.0
-                                s = 0.0
-                            end
-
-                            if d_sign_swap == 1
-                                if d > 0.0
-                                    d -= aeb
-                                else
-                                    d += aeb
-                                end
-                            end
-
-                            d_swap_rank, r_swap_rank, s_swap_rank = rankOrder(abs(d),abs(r),s)
-
-                            mags = MArray{Tuple{3},Float64}(0.0,0.0,0.0)
-                            mags[d_swap_rank] = abs(d)
-                            mags[r_swap_rank] = abs(r)
-                            mags[s_swap_rank] = s
-
-                            # handle normal swaps
-                            if d_largest_swap != 0 || d_sign_swap == 1
-                                if d_swap_rank == 1
-                                    if d_sign_swap == 0
-                                        if d_largest_swap != 2 && d_largest_swap != 3 # those codes require d to be on top!
-                                            d_swap_rank = 2
-                                            if s_swap_rank == 2
-                                                s_swap_rank = 1
-                                            else
-                                                r_swap_rank = 1
-                                            end
-                                        end
-                                    end
-                                else
-                                    d_swap_rank = 1
-                                    if s_swap_rank == 1
-                                        s_swap_rank = 2
-                                    else
-                                        r_swap_rank = 2
-                                    end
-                                end
-                            end
-
-                            if r_over_s_swap == 1
-                                temp = r_swap_rank
-                                r_swap_rank = s_swap_rank
-                                s_swap_rank = temp
-                            end
-
-                            # handle degenerate setting
-
-                            if d_largest_swap == 2
-                                s_swap_rank = 1
-                            end
-
-                            if r_over_s_swap == 2
-                                minRank = min(r_swap_rank,s_swap_rank)
-                                r_swap_rank = minRank
-                                s_swap_rank = minRank
-                            end
-
-                            if d_largest_swap == 3
-                                r_swap_rank = 1
-                            end
-
-                            # set stuff back to their ranks
-                            d = nonzeroSign(d) * mags[d_swap_rank]
-                            r = nonzeroSign(r) * mags[r_swap_rank]
-                            s = mags[s_swap_rank]
-
                         end
 
-                        setTensor(tf, i, j, t, recomposeTensor(d, r, s, θ))
+                        if d_sign_swap == 1
+                            if d > 0.0
+                                d -= aeb
+                            else
+                                d += aeb
+                            end
+                        end
 
-                    end # end if precision >= 8 (then else for the main reconstruction)
+                        d_swap_rank, r_swap_rank, s_swap_rank = rankOrder(abs(d),abs(r),s)
 
-                end # end if not all of the base codes are 0
+                        mags = MArray{Tuple{3},Float64}(0.0,0.0,0.0)
+                        mags[d_swap_rank] = abs(d)
+                        mags[r_swap_rank] = abs(r)
+                        mags[s_swap_rank] = s
 
-            end # end for
-        end # end for 
-    end # end for
+                        # handle normal swaps
+                        if d_largest_swap != 0 || d_sign_swap == 1
+                            if d_swap_rank == 1
+                                if d_sign_swap == 0
+                                    if d_largest_swap != 2 && d_largest_swap != 3 # those codes require d to be on top!
+                                        d_swap_rank = 2
+                                        if s_swap_rank == 2
+                                            s_swap_rank = 1
+                                        else
+                                            r_swap_rank = 1
+                                        end
+                                    end
+                                end
+                            else
+                                d_swap_rank = 1
+                                if s_swap_rank == 1
+                                    s_swap_rank = 2
+                                else
+                                    r_swap_rank = 2
+                                end
+                            end
+                        end
+
+                        if r_over_s_swap == 1
+                            temp = r_swap_rank
+                            r_swap_rank = s_swap_rank
+                            s_swap_rank = temp
+                        end
+
+                        # handle degenerate setting
+
+                        if d_largest_swap == 2
+                            s_swap_rank = 1
+                        end
+
+                        if r_over_s_swap == 2
+                            minRank = min(r_swap_rank,s_swap_rank)
+                            r_swap_rank = minRank
+                            s_swap_rank = minRank
+                        end
+
+                        if d_largest_swap == 3
+                            r_swap_rank = 1
+                        end
+
+                        # set stuff back to their ranks
+                        d = nonzeroSign(d) * mags[d_swap_rank]
+                        r = nonzeroSign(r) * mags[r_swap_rank]
+                        s = mags[s_swap_rank]
+
+                    end
+
+                    setTensor(tf, i, j, recomposeTensor(d, r, s, θ))
+
+                end # end if precision >= 8 (then else for the main reconstruction)
+
+            end # end if not all of the base codes are 0
+
+        end # end for
+    end # end for 
 
     augmentSplit = time()
 
@@ -485,7 +471,7 @@ function decompress2dSymmetric(compressed_file, decompress_folder, output = "../
     cd(cwd)
     
     vals_file = open("$output/vals.bytes", "r")
-    dims = reinterpret(Int64, read(vals_file, 24))
+    dims = reinterpret(Int64, read(vals_file, 16))
     bound = reinterpret(Float64, read(vals_file, 8))[1]
     codeBytesLength = reinterpret(Int64, read(vals_file, 8))[1]
     codeBytes = read(vals_file, codeBytesLength)
@@ -495,7 +481,7 @@ function decompress2dSymmetric(compressed_file, decompress_folder, output = "../
     close(vals_file)
 
     codesBase = huffmanDecode(codeBytes)
-    dims_tuple::Tuple{Int64,Int64,Int64} = (dims[1],dims[2],dims[3])
+    dims_tuple::Tuple{Int64,Int64} = (dims[1],dims[2])
     if length(codesBase) == 0
         codes = zeros(Int64, dims_tuple)
     else
@@ -512,9 +498,9 @@ function decompress2dSymmetric(compressed_file, decompress_folder, output = "../
     readSplit = time()
 
     if baseCompressor == "sz3"
-        run(`../SZ3/build/bin/sz3 -f -z $output/A.cmp -o $output/$decompress_folder/A.raw -3 $(dims[1]) $(dims[2]) $(dims[3]) -M ABS $bound`)
-        run(`../SZ3/build/bin/sz3 -f -z $output/B.cmp -o $output/$decompress_folder/B.raw -3 $(dims[1]) $(dims[2]) $(dims[3]) -M ABS $bound`)
-        run(`../SZ3/build/bin/sz3 -f -z $output/D.cmp -o $output/$decompress_folder/D.raw -3 $(dims[1]) $(dims[2]) $(dims[3]) -M ABS $bound`)
+        run(`../SZ3/build/bin/sz3 -f -z $output/A.cmp -o $output/$decompress_folder/A.raw -M ABS $bound`)
+        run(`../SZ3/build/bin/sz3 -f -z $output/B.cmp -o $output/$decompress_folder/B.raw -M ABS $bound`)
+        run(`../SZ3/build/bin/sz3 -f -z $output/D.cmp -o $output/$decompress_folder/D.raw -M ABS $bound`)
     elseif baseCompressor == "sperr"
         run(`../SPERR/build/bin/sperr2d $output/A.cmp -d --ftype 32 --dims $(dims[1]) $(dims[2]) --decomp_f $output/$decompress_folder/A.raw --pwe $bound`)
         run(`../SPERR/build/bin/sperr2d $output/B.cmp -d --ftype 32 --dims $(dims[1]) $(dims[2]) --decomp_f $output/$decompress_folder/B.raw --pwe $bound`)
@@ -533,24 +519,22 @@ function decompress2dSymmetric(compressed_file, decompress_folder, output = "../
     # adjust
 
     next_lossless = 1
-    for t in 1:dims[3]
-        for j in 1:dims[2]
-            for i in 1:dims[1]
-                if fullLossless[i,j,t] == 1
-                    nextTensor = SVector{3,Float64}(losslessValues[next_lossless], losslessValues[next_lossless+1], losslessValues[next_lossless+2])
-                    setTensor(tf, i, j, t, nextTensor)
-                    next_lossless += 3
-                elseif codes[i,j,t] == 2^bits-1
-                    intermediateTensor = getTensor(tf, i, j, t)
-                    trace = (intermediateTensor[1]+intermediateTensor[3])/2
-                    nextTensor = SVector{3,Float64}(losslessValues[next_lossless]+trace, losslessValues[next_lossless+1], -losslessValues[next_lossless]+trace)
-                    setTensor(tf, i, j, t, nextTensor)
-                    next_lossless += 2
-                elseif codes[i,j,t] != 0
-                    trace, r, θ = decomposeTensor( getTensor( tf, i, j, t ) )
-                    θ += 2pi/(2^bits-1)*codes[i,j,t]
-                    setTensor(tf, i, j, t, recomposeTensor( trace, r, θ ))
-                end
+    for j in 1:dims[2]
+        for i in 1:dims[1]
+            if fullLossless[i,j] == 1
+                nextTensor = SVector{3,Float64}(losslessValues[next_lossless], losslessValues[next_lossless+1], losslessValues[next_lossless+2])
+                setTensor(tf, i, j, nextTensor)
+                next_lossless += 3
+            elseif codes[i,j] == 2^bits-1
+                intermediateTensor = getTensor(tf, i, j)
+                trace = (intermediateTensor[1]+intermediateTensor[3])/2
+                nextTensor = SVector{3,Float64}(losslessValues[next_lossless]+trace, losslessValues[next_lossless+1], -losslessValues[next_lossless]+trace)
+                setTensor(tf, i, j, nextTensor)
+                next_lossless += 2
+            elseif codes[i,j] != 0
+                trace, r, θ = decomposeTensor( getTensor( tf, i, j) )
+                θ += 2pi/(2^bits-1)*codes[i,j]
+                setTensor(tf, i, j, recomposeTensor( trace, r, θ ))
             end
         end
     end

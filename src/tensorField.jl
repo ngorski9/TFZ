@@ -33,13 +33,13 @@ export duplicate
 export inErrorBounds
 
 struct TF
-    entries::Array{Float64}
-    dims::Tuple{Int64, Int64, Int64}
+    entries::Array{Float64, 3}
+    dims::Tuple{Int64, Int64}
 end
 
 struct TF_Sym
-    entries::Array{Float64}
-    dims::Tuple{Int64, Int64, Int64}
+    entries::Array{Float64, 3}
+    dims::Tuple{Int64, Int64}
 end
 
 function inReb(x,y,reb)
@@ -60,9 +60,9 @@ function duplicate(tf::TF)
     return TF(deepcopy(tf.entries),tf.dims)
 end
 
-function loadTFFromFolder(folder::String, dims::Tuple{Int64, Int64, Int64})
+function loadTFFromFolder(folder::String, dims::Tuple{Int64, Int64})
 
-    num_entries = dims[1]*dims[2]*dims[3]
+    num_entries = dims[1]*dims[2]
     num_bytes = filesize("$folder/A.raw")/num_entries
 
     if num_bytes == 8
@@ -104,15 +104,13 @@ function loadTFFromFolder(folder::String, dims::Tuple{Int64, Int64, Int64})
         exit(1)
     end
 
-    entries::Array{Float64} = Array{Float64}(undef, (4,dims[1],dims[2],dims[3]))
-    for k in 1:dims[3]
-        for j in 1:dims[2]
-            for i in 1:dims[1]
-                entries[1,i,j,k] = A[i,j,k]
-                entries[2,i,j,k] = B[i,j,k]
-                entries[3,i,j,k] = C[i,j,k]
-                entries[4,i,j,k] = D[i,j,k]
-            end
+    entries::Array{Float64} = Array{Float64}(undef, (4,dims[1],dims[2]))
+    for j in 1:dims[2]
+        for i in 1:dims[1]
+            entries[1,i,j] = A[i,j]
+            entries[2,i,j] = B[i,j]
+            entries[3,i,j] = C[i,j]
+            entries[4,i,j] = D[i,j]
         end
     end
 
@@ -122,8 +120,8 @@ function loadTFFromFolder(folder::String, dims::Tuple{Int64, Int64, Int64})
 
 end
 
-function loadTFFromFolderSym(folder::String, dims::Tuple{Int64, Int64, Int64})
-    num_entries = dims[1]*dims[2]*dims[3]
+function loadTFFromFolderSym(folder::String, dims::Tuple{Int64, Int64})
+    num_entries = dims[1]*dims[2]
     num_bytes = filesize("$folder/A.raw")/num_entries
 
     if num_bytes == 8
@@ -157,14 +155,12 @@ function loadTFFromFolderSym(folder::String, dims::Tuple{Int64, Int64, Int64})
         exit(1)
     end
 
-    entries::Array{Float64} = Array{Float64}(undef, (3,dims[1],dims[2],dims[3]))
-    for k in 1:dims[3]
-        for j in 1:dims[2]
-            for i in 1:dims[1]
-                entries[1,i,j,k] = A[i,j,k]
-                entries[2,i,j,k] = B[i,j,k]
-                entries[3,i,j,k] = D[i,j,k]
-            end
+    entries::Array{Float64} = Array{Float64}(undef, (3,dims[1],dims[2]))
+    for j in 1:dims[2]
+        for i in 1:dims[1]
+            entries[1,i,j] = A[i,j]
+            entries[2,i,j] = B[i,j]
+            entries[3,i,j] = D[i,j]
         end
     end
 
@@ -230,35 +226,35 @@ function saveTF32(folder::String, tf::TF_Sym, suffix::String="")
     saveArray32("$folder/D$suffix.raw", tf.entries[3,:,:,:])
 end
 
-function getTensor(tf::TF, x::Int64, y::Int64, t::Int64)
-    return SMatrix{2,2,Float64}( tf.entries[1,x,y,t], tf.entries[3,x,y,t], tf.entries[2,x,y,t], tf.entries[4,x,y,t] )
+function getTensor(tf::TF, x::Int64, y::Int64)
+    return SMatrix{2,2,Float64}( tf.entries[1,x,y], tf.entries[3,x,y], tf.entries[2,x,y], tf.entries[4,x,y] )
 end
 
-function getTensor(tf::TF_Sym, x::Int64, y::Int64, t::Int64)
-    return SVector{3,Float64}( tf.entries[1,x,y,t], tf.entries[2,x,y,t], tf.entries[3,x,y,t] )
+function getTensor(tf::TF_Sym, x::Int64, y::Int64)
+    return SVector{3,Float64}( tf.entries[1,x,y], tf.entries[2,x,y], tf.entries[3,x,y] )
 end
 
-function setTensor(tf::TF, x, y, t, tensor::FloatMatrix)
-    tf.entries[1,x,y,t] = tensor[1,1]
-    tf.entries[2,x,y,t] = tensor[1,2]
-    tf.entries[3,x,y,t] = tensor[2,1]
-    tf.entries[4,x,y,t] = tensor[2,2]
+function setTensor(tf::TF, x, y, tensor::FloatMatrix)
+    tf.entries[1,x,y] = tensor[1,1]
+    tf.entries[2,x,y] = tensor[1,2]
+    tf.entries[3,x,y] = tensor[2,1]
+    tf.entries[4,x,y] = tensor[2,2]
 end
 
-function setTensor(tf::TF_Sym, x, y, t, tensor::FloatMatrixSymmetric)
-    tf.entries[1,x,y,t] = tensor[1]
-    tf.entries[2,x,y,t] = tensor[2]
-    tf.entries[3,x,y,t] = tensor[3]
+function setTensor(tf::TF_Sym, x, y, tensor::FloatMatrixSymmetric)
+    tf.entries[1,x,y] = tensor[1]
+    tf.entries[2,x,y] = tensor[2]
+    tf.entries[3,x,y] = tensor[3]
 end
 
 # returns in counterclockwise orientation, consistent with getCellVertexCoords
-function getTensorsAtCell(tf::TF, x::Int64, y::Int64, t::Int64, top::Bool)
-    points = getCellVertexCoords(x,y,t,top)
+function getTensorsAtCell(tf::TF, x::Int64, y::Int64, top::Bool)
+    points = getCellVertexCoords(x,y,top)
     return ( getTensor(tf, points[1]...), getTensor(tf, points[2]...), getTensor(tf, points[3]...) )
 end
 
-function getDegeneracyType( tf::TF_Sym, x::Int64, y::Int64, t::Int64, top::Bool )
-    points = getCellVertexCoords(x,y,t,top)
+function getDegeneracyType( tf::TF_Sym, x::Int64, y::Int64, top::Bool )
+    points = getCellVertexCoords(x,y,top)
     tensor1 = getTensor(tf, points[1]...)
     tensor2 = getTensor(tf, points[2]...)
     tensor3 = getTensor(tf, points[3]...)
@@ -347,8 +343,8 @@ function getDegeneracyType( tf::TF_Sym, x::Int64, y::Int64, t::Int64, top::Bool 
 
 end
 
-function getDegeneracyTypeFull( tf::TF_Sym, x::Int64, y::Int64, t::Int64, top::Bool )
-    points = getCellVertexCoords(x,y,t,top)
+function getDegeneracyTypeFull( tf::TF_Sym, x::Int64, y::Int64, top::Bool )
+    points = getCellVertexCoords(x,y,top)
     tensor1 = getTensor(tf, points[1]...)
     tensor2 = getTensor(tf, points[2]...)
     tensor3 = getTensor(tf, points[3]...)
@@ -455,28 +451,28 @@ function getDegeneracyTypeFull( tf::TF_Sym, x::Int64, y::Int64, t::Int64, top::B
 
 end
 
-function classifyCellEigenvalue( tf::TF, x::Int64, y::Int64, t::Int64, top::Bool, eigenvector::Bool, verbose::Bool = false)
+function classifyCellEigenvalue( tf::TF, x::Int64, y::Int64, top::Bool, eigenvector::Bool, verbose::Bool = false)
     if top
-        return cellTopology.classifyCellEigenvalue( getTensor(tf, x, y+1, t), getTensor(tf, x+1, y, t), getTensor(tf, x+1, y+1, t), eigenvector, verbose )
+        return cellTopology.classifyCellEigenvalue( getTensor(tf, x, y+1), getTensor(tf, x+1, y), getTensor(tf, x+1, y+1), eigenvector, verbose )
     else
-        return cellTopology.classifyCellEigenvalue( getTensor(tf, x, y, t), getTensor(tf, x+1, y, t), getTensor(tf, x, y+1, t), eigenvector, verbose )
+        return cellTopology.classifyCellEigenvalue( getTensor(tf, x, y), getTensor(tf, x+1, y), getTensor(tf, x, y+1), eigenvector, verbose )
     end
 end
 
-function classifyCellEigenvector( tf::TF, x::Int64, y::Int64, t::Int64, top::Bool )
+function classifyCellEigenvector( tf::TF, x::Int64, y::Int64, top::Bool )
     if top
-        return cellTopology.classifyCellEigenvector( getTensor(tf, x, y+1, t), getTensor(tf, x+1, y, t), getTensor(tf, x+1, y+1, t) )
+        return cellTopology.classifyCellEigenvector( getTensor(tf, x, y+1), getTensor(tf, x+1, y), getTensor(tf, x+1, y+1) )
     else
-        return cellTopology.classifyCellEigenvector( getTensor(tf, x, y, t), getTensor(tf, x+1, y, t), getTensor(tf, x, y+1, t) )
+        return cellTopology.classifyCellEigenvector( getTensor(tf, x, y), getTensor(tf, x+1, y), getTensor(tf, x, y+1) )
     end
 end
 
-function getDegeneracyType( tf::TF, x::Int64, y::Int64, t::Int64, top::Bool )
-    return getDegeneracyType( getTensorsAtCell( tf, x, y, t, top )... )
+function getDegeneracyType( tf::TF, x::Int64, y::Int64, top::Bool )
+    return getDegeneracyType( getTensorsAtCell( tf, x, y, top )... )
 end
 
-function getDegeneracyTypeFull( tf::TF, x::Int64, y::Int64, t::Int64, top::Bool )
-    return getDegeneracyTypeFull( getTensorsAtCell( tf, x, y, t, top )... )
+function getDegeneracyTypeFull( tf::TF, x::Int64, y::Int64, top::Bool )
+    return getDegeneracyTypeFull( getTensorsAtCell( tf, x, y, top )... )
 end
 
 # we assume that the tensors are in counterclockwise direction
