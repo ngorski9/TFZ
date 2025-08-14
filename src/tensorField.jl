@@ -120,22 +120,7 @@ function loadTFFromFolderSym(folder::String, dims::Tuple{Int64, Int64}, slice::I
     return tf
 end
 
-function getMinAndMax(tf::TF)
-    min_ = tf.entries[1,1,1,1]
-    max_ = tf.entries[1,1,1,1]
-
-    for i in tf.entries
-        if i < min_
-            min_ = i
-        elseif i > max_
-            max_ = i
-        end
-    end
-
-    return (min_,max_)
-end
-
-function getMinAndMax(tf::TF_Sym)
+function getMinAndMax(tf)
     min_ = tf.entries[1,1,1,1]
     max_ = tf.entries[1,1,1,1]
 

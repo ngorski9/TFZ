@@ -321,19 +321,6 @@ function main()
         
         combined_visit_counts = zeros(Int64, 1)
 
-        arrays = []
-        if symmetric
-            array_names = ("A","B","D")
-        else
-            array_names = ("A","B","C","D")
-        end
-
-        for a in array_names
-            byte_file = open("$data_folder/$a.raw", "r")
-            push!(arrays, reshape( reinterpret( Float64, read(byte_file) ), (slice_size[1],slice_size[2],num_slices) ))
-            close(byte_file)
-        end
-
         stdout_ = stdout
 
         numNoRange = 0 # we use this to keep track of the number of slices with 0 range so we can omit them from psnr
@@ -370,6 +357,23 @@ function main()
             target = target * " (NAIVE)"
         end
 
+        naiveArrays = Array{Float64, 3}[]
+
+        if naive
+            if symmetric
+                array_names = ("A","B","D")
+            else
+                array_names = ("A","B","C","D")
+            end
+    
+            for a in array_names
+                byte_file = open("$data_folder/$a.raw", "r")
+                reshaped = reshape( reinterpret( Float64, read(byte_file) ), (slice_size[1],slice_size[2],num_slices) )
+                push!(naiveArrays, reshaped)
+                close(byte_file)
+            end
+        end
+
         for t in range
 
             println("t = $t")
@@ -378,20 +382,20 @@ function main()
                 redirect_stdout(devnull)
             end
 
-            removeIfExists("$output/slice")
-            run(`mkdir $output/slice`)
-            saveArray64("$output/slice/A.raw", arrays[1][:,:,t])
-            saveArray64("$output/slice/B.raw", arrays[2][:,:,t])
-            if symmetric
-                saveArray64("$output/slice/D.raw", arrays[3][:,:,t])
-            else
-                saveArray64("$output/slice/C.raw", arrays[3][:,:,t])
-                saveArray64("$output/slice/D.raw", arrays[4][:,:,t])
-            end
-
             compression_start = time()
 
             if naive
+                removeIfExists("$output/slice")
+                run(`mkdir $output/slice`)
+                saveArray64("$output/slice/A.raw", naiveArrays[1][:,:,t])
+                saveArray64("$output/slice/B.raw", naiveArrays[2][:,:,t])
+                if symmetric
+                    saveArray64("$output/slice/D.raw", naiveArrays[3][:,:,t])
+                else
+                    saveArray64("$output/slice/C.raw", naiveArrays[3][:,:,t])
+                    saveArray64("$output/slice/D.raw", naiveArrays[4][:,:,t])
+                end
+
                 if symmetric
                     compress2dSymmetricNaiveWithMask("$output/slice", (slice_size[1],slice_size[2]), intermediate_name, eb, output, base_compressor)
                 else
@@ -399,9 +403,9 @@ function main()
                 end
             else
                 if symmetric
-                    ctVector, slice_visit_counts = compress2dSymmetric("$output/slice", (slice_size[1],slice_size[2]), intermediate_name, eb, output, base_compressor, !skipStatistics)
+                    ctVector, slice_visit_counts = compress2dSymmetric(data_folder, (slice_size[1],slice_size[2]), intermediate_name, eb, output, base_compressor, !skipStatistics, t)
                 else
-                    ctVector, slice_visit_counts = compress2d("$output/slice", (slice_size[1],slice_size[2]), intermediate_name, eb, output, false, eigenvalue, eigenvector, base_compressor, !skipStatistics)
+                    ctVector, slice_visit_counts = compress2d(data_folder, (slice_size[1],slice_size[2]), intermediate_name, eb, output, eigenvalue, eigenvector, base_compressor, !skipStatistics, t)
                 end
 
                 ctv += ctVector
@@ -440,7 +444,7 @@ function main()
             totalDecompressionTime += dt
 
             if !skipStatistics
-                metrics = evaluateCompression(Val(symmetric), "$output/slice", "$output/$decompressed_name", (slice_size[1], slice_size[2]), compressed_size )
+                metrics = evaluateCompression(Val(symmetric), data_folder, "$output/$decompressed_name", (slice_size[1], slice_size[2]), compressed_size, t )
                 vertexMatching, cellMatching, bitrate, mseByRangeSquared, maxErrorByRange = metrics
 
                 if !naive

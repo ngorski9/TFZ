@@ -148,6 +148,7 @@ function reconstructionQuality(tf_ground, tf_reconstructed)
     end
 
     peak_signal = max_val - min_val
+
     mse = mean( (tf_ground.entries - tf_reconstructed.entries) .^ 2 )
     psnr = 10 * log(10, peak_signal^2 / mse)
 
@@ -156,13 +157,13 @@ function reconstructionQuality(tf_ground, tf_reconstructed)
     return psnr, mse, (max_val - min_val), max_error
 end
 
-function evaluateCompression(::Val{symmetric}, ground::String, reconstructed::String, dims::Tuple{Int64, Int64}, compressed_size::Int64 = -1) where symmetric
+function evaluateCompression(::Val{symmetric}, ground::String, reconstructed::String, dims::Tuple{Int64, Int64}, compressed_size::Int64 = -1, gt_slice::Int64 = 1) where symmetric
 
     if symmetric
-        tf1 = loadTFFromFolderSym(ground, dims)
+        tf1 = loadTFFromFolderSym(ground, dims, gt_slice)
         tf2 = loadTFFromFolderSym(reconstructed, dims)
     else
-        tf1 = loadTFFromFolder(ground, dims)
+        tf1 = loadTFFromFolder(ground, dims, gt_slice)
         tf2 = loadTFFromFolder(reconstructed, dims)
     end
 

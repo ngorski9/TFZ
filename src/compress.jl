@@ -14,7 +14,6 @@ using ..cellTopology
 export compress2d
 export compress2dNaive
 export compress2dSymmetric
-export compress2dSymmetricNaive
 export compress2dSymmetricNaiveWithMask
 
 function itercount_transform(arr)
@@ -26,7 +25,7 @@ function itercount_transform(arr)
     return bincount
 end
 
-function compress2dNaive(containing_folder, dims, output_file, relative_error_bound, output = "../output", baseCompressor="sz3", verbose=false)
+function compress2dNaive(containing_folder, dims, output_file, relative_error_bound, output = "../output", baseCompressor="sz3")
     tf = loadTFFromFolder(containing_folder, dims)
 
     # prepare derived attributes for compression
@@ -76,7 +75,7 @@ function compress2dNaive(containing_folder, dims, output_file, relative_error_bo
 end
 
 function compress2dSymmetricNaiveWithMask(containing_folder, dims, output_file, relative_error_bound, output = "../output", baseCompressor = "sz3")
-    tf = loaodTFFromFolderSym(containing_folder, dims)
+    tf = loadTFFromFolderSym(containing_folder, dims)
 
     # prepare derived attributes for compression
 
@@ -144,9 +143,9 @@ function compress2dSymmetricNaiveWithMask(containing_folder, dims, output_file, 
     remove("$output/vals.bytes")
 end
 
-function compress2d(containing_folder, dims, output_file, relative_error_bound, output="../output", verbose=false, eigenvalue=true, eigenvector=true, baseCompressor = "sz3", do_itercounts=false)
+function compress2d(containing_folder, dims, output_file, relative_error_bound, output="../output", eigenvalue=true, eigenvector=true, baseCompressor = "sz3", do_itercounts=false, slice=1)
     startTime = time()
-    tf = loadTFFromFolder(containing_folder, dims)
+    tf = loadTFFromFolder(containing_folder, dims, slice)
     
     # prepare derived attributes for compression
 
@@ -1007,9 +1006,9 @@ function compress2d(containing_folder, dims, output_file, relative_error_bound, 
 
 end
 
-function compress2dSymmetric(containing_folder, dims, output_file, relative_error_bound, output = "../output", baseCompressor = "sz3", do_itercounts = false)
+function compress2dSymmetric(containing_folder, dims, output_file, relative_error_bound, output = "../output", baseCompressor = "sz3", do_itercounts = false, slice=1)
     startTime = time()
-    tf = loadTFFromFolderSym(containing_folder, dims)
+    tf = loadTFFromFolderSym(containing_folder, dims, slice)
 
     bits = 6 # this used to be a parameter.
 

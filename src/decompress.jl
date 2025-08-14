@@ -55,49 +55,6 @@ function decompress2dNaive(compressed_file, decompress_folder, output = "../outp
 
 end
 
-function decompress2dSymmetricNaive(compressed_file, decompress_folder, output = "../output", baseCompressor = "sz3")
-    try
-        run(`mkdir $output/$decompress_folder`)
-    catch
-    end
-
-    # Un XZ the compressed file and undo the tar
-
-    cwd = pwd()
-    cd(output)
-
-    # run(`xz -dv $output/$compressed_file.tar.xz`)
-    run(`zstd -d $compressed_file.tar.zst`)
-    run(`tar xvf $compressed_file.tar`)
-
-    cd(cwd)
-    
-    vals_file = open("$output/vals.bytes", "r")
-    dims = reinterpret(Int64, read(vals_file, 16))
-    bound = reinterpret(Float64, read(vals_file, 8))[1]
-    close(vals_file)
-
-    if baseCompressor == "sz3"
-        run(`../SZ3/build/bin/sz3 -d -z $output/A.cmp -o $output/$decompress_folder/A.raw -M ABS $bound`)
-        run(`../SZ3/build/bin/sz3 -d -z $output/B.cmp -o $output/$decompress_folder/B.raw -M ABS $bound`)
-        run(`../SZ3/build/bin/sz3 -d -z $output/D.cmp -o $output/$decompress_folder/D.raw -M ABS $bound`)
-    elseif baseCompressor == "sperr"
-        run(`../SPERR/build/bin/sperr2d $output/A.cmp -d --ftype 64 --dims $(dims[1]) $(dims[2]) --decomp_d $output/$decompress_folder/A.raw --pwe $bound`)
-        run(`../SPERR/build/bin/sperr2d $output/B.cmp -d --ftype 64 --dims $(dims[1]) $(dims[2]) --decomp_d $output/$decompress_folder/B.raw --pwe $bound`)
-        run(`../SPERR/build/bin/sperr2d $output/D.cmp -d --ftype 64 --dims $(dims[1]) $(dims[2]) --decomp_d $output/$decompress_folder/C.raw --pwe $bound`)
-    else
-        println("ERROR: unrecognized base compressor $baseCompressor")
-        exit(1)
-    end        
-
-    remove("$output/A.cmp")
-    remove("$output/B.cmp")
-    remove("$output/D.cmp")
-    remove("$output/$compressed_file.tar")
-    remove("$output/vals.bytes")
-
-end
-
 function decompress2dSymmetricNaiveWithMask(compressed_file, decompress_folder, output = "../output", baseCompressor = "sz3")
     try
         run(`mkdir $output/$decompress_folder`)
@@ -137,7 +94,7 @@ function decompress2dSymmetricNaiveWithMask(compressed_file, decompress_folder, 
     mask = huffmanDecode(huffmanBytes)
 
     if length(mask) > 0
-        tf = loadTFFromFolderSym("$output/$decompress_folder", (dims[1]*dims[2],1,1), 1, true)
+        tf = loadTFFromFolderSym("$output/$decompress_folder", (dims[1]*dims[2],1))
 
         for i in 1:(dims[1]*dims[2])
             if mask[i] == 0.0
