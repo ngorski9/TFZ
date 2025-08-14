@@ -9,10 +9,9 @@ using ..huffman
 export decompress2d
 export decompress2dNaive
 export decompress2dSymmetric
-export decompress2dSymmetricNaive
 export decompress2dSymmetricNaiveWithMask
 
-function decompress2dNaive(compressed_file, decompress_folder, output = "../output", baseCompressor = "sz3")
+function decompress2dNaive(compressed_file, decompress_folder, output = "../output", baseCompressor = "SZ3", bcFolder=".")
     try
         run(`mkdir $output/$decompress_folder`)
     catch
@@ -34,16 +33,19 @@ function decompress2dNaive(compressed_file, decompress_folder, output = "../outp
     bound = reinterpret(Float64, read(vals_file, 8))[1]
     close(vals_file)
 
-    if baseCompressor == "sz3"
-        run(`../SZ3/build/bin/sz3 -d -z $output/A.cmp -o $output/$decompress_folder/A.raw -M ABS $bound`)
-        run(`../SZ3/build/bin/sz3 -d -z $output/B.cmp -o $output/$decompress_folder/B.raw -M ABS $bound`)
-        run(`../SZ3/build/bin/sz3 -d -z $output/C.cmp -o $output/$decompress_folder/C.raw -M ABS $bound`)
-        run(`../SZ3/build/bin/sz3 -d -z $output/D.cmp -o $output/$decompress_folder/D.raw -M ABS $bound`)
-    elseif baseCompressor == "sperr"
-        run(`../SPERR/build/bin/sperr2d $output/A.cmp -d --ftype 64 --dims $(dims[1]) $(dims[2]) --decomp_d $output/$decompress_folder/A.raw --pwe $bound`)
-        run(`../SPERR/build/bin/sperr2d $output/B.cmp -d --ftype 64 --dims $(dims[1]) $(dims[2]) --decomp_d $output/$decompress_folder/B.raw --pwe $bound`)
-        run(`../SPERR/build/bin/sperr2d $output/C.cmp -d --ftype 64 --dims $(dims[1]) $(dims[2]) --decomp_d $output/$decompress_folder/C.raw --pwe $bound`)
-        run(`../SPERR/build/bin/sperr2d $output/D.cmp -d --ftype 64 --dims $(dims[1]) $(dims[2]) --decomp_d $output/$decompress_folder/D.raw --pwe $bound`)
+    if baseCompressor == "SZ3"
+        run(`$bcFolder/sz3 -d -z $output/A.cmp -o $output/$decompress_folder/A.raw -M ABS $bound`)
+        run(`$bcFolder/sz3 -d -z $output/B.cmp -o $output/$decompress_folder/B.raw -M ABS $bound`)
+        run(`$bcFolder/sz3 -d -z $output/C.cmp -o $output/$decompress_folder/C.raw -M ABS $bound`)
+        run(`$bcFolder/sz3 -d -z $output/D.cmp -o $output/$decompress_folder/D.raw -M ABS $bound`)
+    elseif baseCompressor == "SPERR"
+        run(`$bcFolder/sperr2d $output/A.cmp -d --ftype 64 --dims $(dims[1]) $(dims[2]) --decomp_d $output/$decompress_folder/A.raw --pwe $bound`)
+        run(`$bcFolder/sperr2d $output/B.cmp -d --ftype 64 --dims $(dims[1]) $(dims[2]) --decomp_d $output/$decompress_folder/B.raw --pwe $bound`)
+        run(`$bcFolder/sperr2d $output/C.cmp -d --ftype 64 --dims $(dims[1]) $(dims[2]) --decomp_d $output/$decompress_folder/C.raw --pwe $bound`)
+        run(`$bcFolder/sperr2d $output/D.cmp -d --ftype 64 --dims $(dims[1]) $(dims[2]) --decomp_d $output/$decompress_folder/D.raw --pwe $bound`)
+    else
+        println("TFZ: unrecognized base compressor $baseCompressor")
+        exit(1)
     end
 
     remove("$output/A.cmp")
@@ -55,7 +57,7 @@ function decompress2dNaive(compressed_file, decompress_folder, output = "../outp
 
 end
 
-function decompress2dSymmetricNaiveWithMask(compressed_file, decompress_folder, output = "../output", baseCompressor = "sz3")
+function decompress2dSymmetricNaiveWithMask(compressed_file, decompress_folder, output = "../output", baseCompressor = "SZ3", bcFolder=".")
     try
         run(`mkdir $output/$decompress_folder`)
     catch
@@ -78,16 +80,16 @@ function decompress2dSymmetricNaiveWithMask(compressed_file, decompress_folder, 
     huffmanBytes = read(vals_file)
     close(vals_file)
 
-    if baseCompressor == "sz3"
-        run(`../SZ3/build/bin/sz3 -d -z $output/A.cmp -o $output/$decompress_folder/A.raw -M ABS $bound`)
-        run(`../SZ3/build/bin/sz3 -d -z $output/B.cmp -o $output/$decompress_folder/B.raw -M ABS $bound`)
-        run(`../SZ3/build/bin/sz3 -d -z $output/D.cmp -o $output/$decompress_folder/D.raw -M ABS $bound`)
-    elseif baseCompressor == "sperr"
-        run(`../SPERR/build/bin/sperr2d $output/A.cmp -d --ftype 64 --dims $(dims[1]) $(dims[2]) --decomp_d $output/$decompress_folder/A.raw --pwe $bound`)
-        run(`../SPERR/build/bin/sperr2d $output/B.cmp -d --ftype 64 --dims $(dims[1]) $(dims[2]) --decomp_d $output/$decompress_folder/B.raw --pwe $bound`)
-        run(`../SPERR/build/bin/sperr2d $output/D.cmp -d --ftype 64 --dims $(dims[1]) $(dims[2]) --decomp_d $output/$decompress_folder/D.raw --pwe $bound`)
+    if baseCompressor == "SZ3"
+        run(`$bcFolder/sz3 -d -z $output/A.cmp -o $output/$decompress_folder/A.raw -M ABS $bound`)
+        run(`$bcFolder/sz3 -d -z $output/B.cmp -o $output/$decompress_folder/B.raw -M ABS $bound`)
+        run(`$bcFolder/sz3 -d -z $output/D.cmp -o $output/$decompress_folder/D.raw -M ABS $bound`)
+    elseif baseCompressor == "SPERR"
+        run(`$bcFolder/sperr2d $output/A.cmp -d --ftype 64 --dims $(dims[1]) $(dims[2]) --decomp_d $output/$decompress_folder/A.raw --pwe $bound`)
+        run(`$bcFolder/sperr2d $output/B.cmp -d --ftype 64 --dims $(dims[1]) $(dims[2]) --decomp_d $output/$decompress_folder/B.raw --pwe $bound`)
+        run(`$bcFolder/sperr2d $output/D.cmp -d --ftype 64 --dims $(dims[1]) $(dims[2]) --decomp_d $output/$decompress_folder/D.raw --pwe $bound`)
     else
-        println("ERROR: unrecognized base compressor $baseCompressor")
+        println("TFZ: unrecognized base compressor $baseCompressor")
         exit(1)
     end
 
@@ -115,7 +117,7 @@ function decompress2dSymmetricNaiveWithMask(compressed_file, decompress_folder, 
 
 end
 
-function decompress2d(compressed_file, decompress_folder, output = "../output", baseCompressor = "sz3")
+function decompress2d(compressed_file, decompress_folder, output = "../output", baseCompressor = "SZ3", bcFolder=".")
     startTime = time()
 
     try
@@ -208,18 +210,18 @@ function decompress2d(compressed_file, decompress_folder, output = "../output", 
     readSplit = time()
 
     # Decompress from SZ and load into a tensor field
-    if baseCompressor == "sz3"
-        run(`../SZ3/build/bin/sz3 -f -z $output/A.cmp -o $output/A.raw -M ABS $aeb`)
-        run(`../SZ3/build/bin/sz3 -f -z $output/B.cmp -o $output/B.raw -M ABS $aeb`)
-        run(`../SZ3/build/bin/sz3 -f -z $output/C.cmp -o $output/C.raw -M ABS $aeb`)    
-        run(`../SZ3/build/bin/sz3 -f -z $output/D.cmp -o $output/D.raw -M ABS $aeb`)
-    elseif baseCompressor == "sperr"
-        run(`../SPERR/build/bin/sperr2d $output/A.cmp -d --ftype 32 --dims $(dims[1]) $(dims[2]) --decomp_f $output/A.raw --pwe $aeb`)
-        run(`../SPERR/build/bin/sperr2d $output/B.cmp -d --ftype 32 --dims $(dims[1]) $(dims[2]) --decomp_f $output/B.raw --pwe $aeb`)
-        run(`../SPERR/build/bin/sperr2d $output/C.cmp -d --ftype 32 --dims $(dims[1]) $(dims[2]) --decomp_f $output/C.raw --pwe $aeb`)
-        run(`../SPERR/build/bin/sperr2d $output/D.cmp -d --ftype 32 --dims $(dims[1]) $(dims[2]) --decomp_f $output/D.raw --pwe $aeb`)
+    if baseCompressor == "SZ3"
+        run(`$bcFolder/sz3 -f -z $output/A.cmp -o $output/A.raw -M ABS $aeb`)
+        run(`$bcFolder/sz3 -f -z $output/B.cmp -o $output/B.raw -M ABS $aeb`)
+        run(`$bcFolder/sz3 -f -z $output/C.cmp -o $output/C.raw -M ABS $aeb`)    
+        run(`$bcFolder/sz3 -f -z $output/D.cmp -o $output/D.raw -M ABS $aeb`)
+    elseif baseCompressor == "SPERR"
+        run(`$bcFolder/sperr2d $output/A.cmp -d --ftype 32 --dims $(dims[1]) $(dims[2]) --decomp_f $output/A.raw --pwe $aeb`)
+        run(`$bcFolder/sperr2d $output/B.cmp -d --ftype 32 --dims $(dims[1]) $(dims[2]) --decomp_f $output/B.raw --pwe $aeb`)
+        run(`$bcFolder/sperr2d $output/C.cmp -d --ftype 32 --dims $(dims[1]) $(dims[2]) --decomp_f $output/C.raw --pwe $aeb`)
+        run(`$bcFolder/sperr2d $output/D.cmp -d --ftype 32 --dims $(dims[1]) $(dims[2]) --decomp_f $output/D.raw --pwe $aeb`)
     else
-        println("ERROR: unrecognized base compressor $baseCompressor")
+        println("TFZ: unrecognized base compressor $baseCompressor")
         exit(1)
     end
 
@@ -400,13 +402,14 @@ function decompress2d(compressed_file, decompress_folder, output = "../output", 
     remove("$output/C.cmp")
     remove("$output/D.cmp")
     remove("$output/vals.bytes")
+    remove("$output/$compressed_file.tar")
 
     endTime = time()
 
     return [zstdSplit - startTime, tarSplit - zstdSplit, readSplit - tarSplit, baseDecompressorSplit - readSplit, read2Split - baseDecompressorSplit, augmentSplit - read2Split, saveSplit - augmentSplit, endTime - saveSplit ]
 end
 
-function decompress2dSymmetric(compressed_file, decompress_folder, output = "../output", baseCompressor = "sz3")
+function decompress2dSymmetric(compressed_file, decompress_folder, output = "../output", baseCompressor = "SZ3", bcFolder=".")
     startTime = time()
     bits = 6 # this used to be a parameter
     try
@@ -454,16 +457,16 @@ function decompress2dSymmetric(compressed_file, decompress_folder, output = "../
 
     readSplit = time()
 
-    if baseCompressor == "sz3"
-        run(`../SZ3/build/bin/sz3 -f -z $output/A.cmp -o $output/$decompress_folder/A.raw -M ABS $bound`)
-        run(`../SZ3/build/bin/sz3 -f -z $output/B.cmp -o $output/$decompress_folder/B.raw -M ABS $bound`)
-        run(`../SZ3/build/bin/sz3 -f -z $output/D.cmp -o $output/$decompress_folder/D.raw -M ABS $bound`)
-    elseif baseCompressor == "sperr"
-        run(`../SPERR/build/bin/sperr2d $output/A.cmp -d --ftype 32 --dims $(dims[1]) $(dims[2]) --decomp_f $output/$decompress_folder/A.raw --pwe $bound`)
-        run(`../SPERR/build/bin/sperr2d $output/B.cmp -d --ftype 32 --dims $(dims[1]) $(dims[2]) --decomp_f $output/$decompress_folder/B.raw --pwe $bound`)
-        run(`../SPERR/build/bin/sperr2d $output/D.cmp -d --ftype 32 --dims $(dims[1]) $(dims[2]) --decomp_f $output/$decompress_folder/D.raw --pwe $bound`)
+    if baseCompressor == "SZ3"
+        run(`$bcFolder/sz3 -f -z $output/A.cmp -o $output/$decompress_folder/A.raw -M ABS $bound`)
+        run(`$bcFolder/sz3 -f -z $output/B.cmp -o $output/$decompress_folder/B.raw -M ABS $bound`)
+        run(`$bcFolder/sz3 -f -z $output/D.cmp -o $output/$decompress_folder/D.raw -M ABS $bound`)
+    elseif baseCompressor == "SPERR"
+        run(`$bcFolder/sperr2d $output/A.cmp -d --ftype 32 --dims $(dims[1]) $(dims[2]) --decomp_f $output/$decompress_folder/A.raw --pwe $bound`)
+        run(`$bcFolder/sperr2d $output/B.cmp -d --ftype 32 --dims $(dims[1]) $(dims[2]) --decomp_f $output/$decompress_folder/B.raw --pwe $bound`)
+        run(`$bcFolder/sperr2d $output/D.cmp -d --ftype 32 --dims $(dims[1]) $(dims[2]) --decomp_f $output/$decompress_folder/D.raw --pwe $bound`)
     else
-        println("ERROR: unrecognized base compressor $baseCompressor")
+        println("TFZ: unrecognized base compressor $baseCompressor")
         exit(1)
     end
 
