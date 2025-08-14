@@ -15,4 +15,4 @@ In this repo we provide the main compressor used in the related publication, inc
 
 ### Data Format
 
-All 
+Our support tensor field data stores in RAW binary format. A tensor field is stored as a directory containing four files: ```A.raw```, ```B.raw```, ```C.raw```, and ```D.raw```, which respectively store the $(1,1)$, $(1,2)$, $(2,1)$ and $(2,2)$ entries 
