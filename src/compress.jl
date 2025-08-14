@@ -206,7 +206,7 @@ function compress2d(containing_folder, dims, output_file, relative_error_bound, 
 
     baseCompressorSplit = time()
 
-    tf2 = loadTFFromFolder(output, dims)
+    tf2 = loadTFFromFolder(output, dims, 1, true)
     tfIntermediate = duplicate(tf2)    
 
     d_intermediate = zeros(Float64, dims)
@@ -1053,7 +1053,7 @@ function compress2dSymmetric(containing_folder, dims, output_file, relative_erro
 
     baseCompressorSplit = time()
 
-    tf2 = loadTFFromFolderSym(output, dims)
+    tf2 = loadTFFromFolderSym(output, dims, 1, true)
     stack::Array{Tuple{Int64,Int64,Bool,Bool}} = Array{Tuple{Int64,Int64,Bool,Bool}}(undef, 0)
 
     codes = zeros(UInt64, dims)

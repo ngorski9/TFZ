@@ -60,58 +60,29 @@ function duplicate(tf::TF)
     return TF(deepcopy(tf.entries),tf.dims)
 end
 
-function loadTFFromFolder(folder::String, dims::Tuple{Int64, Int64})
+function loadTFFromFolder(folder::String, dims::Tuple{Int64, Int64}, slice::Int64 = 1, singlePrecision::Bool=false)
 
     num_entries = dims[1]*dims[2]
-    num_bytes = filesize("$folder/A.raw")/num_entries
-
-    if num_bytes == 8
-        A_byte_file = open("$folder/A.raw", "r")
-        A = reshape( reinterpret( Float64, read(A_byte_file) ), dims )
-        close(A_byte_file)
-    
-        B_byte_file = open("$folder/B.raw", "r")
-        B = reshape( reinterpret( Float64, read(B_byte_file) ), dims )
-        close(B_byte_file)
-    
-        C_byte_file = open("$folder/C.raw", "r")
-        C = reshape( reinterpret( Float64, read(C_byte_file) ), dims )
-        close(C_byte_file)
-    
-        D_byte_file = open("$folder/D.raw", "r")
-        D = reshape( reinterpret( Float64, read(D_byte_file) ), dims )
-        close(D_byte_file)
-    elseif num_bytes == 4
-        println("loading from 32 bits to 64")
-        A_byte_file = open("$folder/A.raw", "r")
-        A = Array{Float64}(reshape( reinterpret( Float32, read(A_byte_file) ), dims ))
-        close(A_byte_file)
-    
-        B_byte_file = open("$folder/B.raw", "r")
-        B = Array{Float64}(reshape( reinterpret( Float32, read(B_byte_file) ), dims ))
-        close(B_byte_file)
-    
-        C_byte_file = open("$folder/C.raw", "r")
-        C = Array{Float64}(reshape( reinterpret( Float32, read(C_byte_file) ), dims ))
-        close(C_byte_file)
-    
-        D_byte_file = open("$folder/D.raw", "r")
-        D = Array{Float64}(reshape( reinterpret( Float32, read(D_byte_file) ), dims ))
-        close(D_byte_file)
-    else
-        println("The file that you specified is $num_bytes bytes per point")
-        println("only 32 and 64 bits are currently supported")        
-        exit(1)
-    end
-
     entries::Array{Float64} = Array{Float64}(undef, (4,dims[1],dims[2]))
-    for j in 1:dims[2]
-        for i in 1:dims[1]
-            entries[1,i,j] = A[i,j]
-            entries[2,i,j] = B[i,j]
-            entries[3,i,j] = C[i,j]
-            entries[4,i,j] = D[i,j]
+
+    for (i,f) in enumerate(("A","B","C","D"))
+        if !isfile("$folder/$f.raw")
+            println("TFZ: file $folder/$f.raw is missing.")
+            println("please check your file specification.")
+            exit(1)
         end
+
+        byte_file = open("$folder/$f.raw","r")
+
+        if singlePrecision
+            seek(byte_file, 4 * num_entries * (slice-1))
+            F = Float64.(reshape( reinterpret( Float32, read(byte_file, 4 * num_entries) ), dims ))
+        else
+            seek(byte_file, 8 * num_entries * (slice-1))
+            F = reshape( reinterpret( Float64, read(byte_file, 8 * num_entries) ), dims )
+        end
+
+        entries[i,:,:] = F
     end
 
     tf = TF(entries,dims)
@@ -120,54 +91,33 @@ function loadTFFromFolder(folder::String, dims::Tuple{Int64, Int64})
 
 end
 
-function loadTFFromFolderSym(folder::String, dims::Tuple{Int64, Int64})
+function loadTFFromFolderSym(folder::String, dims::Tuple{Int64, Int64}, slice::Int64 = 1, singlePrecision::Bool = false)
     num_entries = dims[1]*dims[2]
-    num_bytes = filesize("$folder/A.raw")/num_entries
-
-    if num_bytes == 8
-        A_byte_file = open("$folder/A.raw", "r")
-        A = reshape( reinterpret( Float64, read(A_byte_file) ), dims )
-        close(A_byte_file)
-    
-        B_byte_file = open("$folder/B.raw", "r")
-        B = reshape( reinterpret( Float64, read(B_byte_file) ), dims )
-        close(B_byte_file)
-    
-        D_byte_file = open("$folder/D.raw", "r")
-        D = reshape( reinterpret( Float64, read(D_byte_file) ), dims )
-        close(D_byte_file)
-    elseif num_bytes == 4
-        println("loading from 32 bits to 64")
-        A_byte_file = open("$folder/A.raw", "r")
-        A = Array{Float64}(reshape( reinterpret( Float32, read(A_byte_file) ), dims ))
-        close(A_byte_file)
-    
-        B_byte_file = open("$folder/B.raw", "r")
-        B = Array{Float64}(reshape( reinterpret( Float32, read(B_byte_file) ), dims ))
-        close(B_byte_file)
-    
-        D_byte_file = open("$folder/D.raw", "r")
-        D = Array{Float64}(reshape( reinterpret( Float32, read(D_byte_file) ), dims ))
-        close(D_byte_file)
-    else
-        println("The file that you specified is $num_bytes bytes per point")
-        println("only 32 and 64 bits are currently supported")        
-        exit(1)
-    end
-
     entries::Array{Float64} = Array{Float64}(undef, (3,dims[1],dims[2]))
-    for j in 1:dims[2]
-        for i in 1:dims[1]
-            entries[1,i,j] = A[i,j]
-            entries[2,i,j] = B[i,j]
-            entries[3,i,j] = D[i,j]
+
+    for (i,f) in enumerate(("A","B","D"))
+        if !isfile("$folder/$f.raw")
+            println("TFZ: file $folder/$f.raw is missing.")
+            println("please check your file specification.")
+            exit(1)
         end
+
+        byte_file = open("$folder/$f.raw","r")
+
+        if singlePrecision
+            seek(byte_file, 4 * num_entries * (slice-1))
+            F = Float64.(reshape( reinterpret( Float32, read(byte_file, 4 * num_entries) ), dims ))
+        else
+            seek(byte_file, 8 * num_entries * (slice-1))
+            F = reshape( reinterpret( Float64, read(byte_file, 8 * num_entries) ), dims )
+        end
+
+        entries[i,:,:] = F
     end
 
     tf = TF_Sym(entries,dims)
 
     return tf
-
 end
 
 function getMinAndMax(tf::TF)

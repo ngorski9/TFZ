@@ -137,7 +137,7 @@ function decompress2dSymmetricNaiveWithMask(compressed_file, decompress_folder, 
     mask = huffmanDecode(huffmanBytes)
 
     if length(mask) > 0
-        tf = loadTFFromFolderSym("$output/$decompress_folder", (dims[1]*dims[2],1,1))
+        tf = loadTFFromFolderSym("$output/$decompress_folder", (dims[1]*dims[2],1,1), 1, true)
 
         for i in 1:(dims[1]*dims[2])
             if mask[i] == 0.0
@@ -269,7 +269,7 @@ function decompress2d(compressed_file, decompress_folder, output = "../output", 
     baseDecompressorSplit = time()
 
     dims_tuple::Tuple{Int64, Int64} = (dims[1], dims[2])
-    tf = loadTFFromFolder("$output", dims_tuple)
+    tf = loadTFFromFolder("$output", dims_tuple, 1, true)
 
     read2Split = time()
 
@@ -512,7 +512,7 @@ function decompress2dSymmetric(compressed_file, decompress_folder, output = "../
 
     baseDecompressorSplit = time()
 
-    tf = loadTFFromFolderSym("$output/$decompress_folder", dims_tuple)
+    tf = loadTFFromFolderSym("$output/$decompress_folder", dims_tuple, 1, true)
 
     read2Split = time()
 
