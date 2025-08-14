@@ -60,24 +60,49 @@ function classifyTensorEigenvector(R,S)
     end
 end
 
-function main()
-    println("hi")
+function help()
+    println("usage: partitions.jl <folder> <saveName> <size x> <size y> <scale> (slice; optional)")
+    println("see the README for more details.")
+    println()
+    println("folder : Folder containing the asymmetric tensor field to visualize.")
+    println("saveName :") 
+    println("\tName of the output file to be produced. Two files will be created:")
+    println("\t<saveName>.vti will contain the partitions, while <savename>.vtu will")
+    println("\tcontain the degenerate points.")
+    println("<size x> <size y> : The dimensions of the tensor field.")
+    println("<scale> :")
+    println("\tHow many mesh cells should be present in the output mesh along")
+    println("\teach dimension for each cell in the input mesh. Setting this")
+    println("\tequal to 1 will create an output mesh that is the same")
+    println("\tsize as the input mesh.")
+    println("slice (optional) :")
+    println("\tVisualize a 2D slice taken from a collection of 2D tensor")
+    println("\tfields that are stacked into a single file.")
+end
 
-    if length(ARGS) == 0
-        folder = "../output/slice"
-        saveName = "../test"
-        dims = (101,101)
-        scale = 1 # how many extra points do we add between the actual grid points (so the quadratic interp is more accurate).
-    else
-        try
-            folder = ARGS[1]
-            saveName = ARGS[2]
-            dims = (parse(Int64,ARGS[3]),parse(Int64,ARGS[4]))
-            scale = parse(Int64,ARGS[5])
-        catch
-            println("ERROR: Format is folder savename dims[1] dims[2] scale")
+function main()
+    folder = ""
+    saveName = ""
+    dims = (0,0)
+    scale = 1
+    slice = 1
+
+    try
+        if ARGS[1] == "-h" || ARGS[1] == "-help"
+            help()
             exit()
         end
+        folder = ARGS[1]
+        saveName = ARGS[2]
+        dims = (parse(Int64,ARGS[3]),parse(Int64,ARGS[4]))
+        scale = parse(Int64,ARGS[5])
+        if length(ARGS) >= 6
+            slice = parse(Int64,ARGS[6])
+        end
+    catch
+        println("partitions.jl: Format is <folder> <saveName> <size x> <size y> <scale> (slice; optional)")
+        println("run partitions.jl -h for help.")
+        exit(1)
     end
 
     val_colors::Array{Tuple{UInt8,UInt8,UInt8}} = Array{Tuple{UInt8,UInt8,UInt8}}(undef, 5)
@@ -86,13 +111,6 @@ function main()
 
     cp_colors[trisector] = ( 255, 255, 255 )
     cp_colors[wedge] = ( 255, 140, 198 )
-
-    # candidate colors:
-    # lime green: 195, 211, 80
-    # yellow: 248, 198, 48
-    # pink: 255, 140, 198 (this is the winner)
-    # pale green: 133, 255, 199
-    # a sort of yellow: 255, 204, 51 
 
     val_colors[dp] = ( 224, 142, 69 )
     val_colors[rp] = ( 155, 39, 51 )
@@ -122,23 +140,29 @@ function main()
     cp_categorical_val::Array{Float64} = Array{Float64}(undef,0)
     cp_categorical_vec::Array{Float64} = Array{Float64}(undef,0)
 
+    # files
+    slice_bytes = dims[1] * dims[2] * 8
+    slice_offset = slice_bytes * (slice - 1)
 
     a_file = open("$folder/A.raw", "r")
     b_file = open("$folder/B.raw", "r")
     c_file = open("$folder/C.raw", "r")
     d_file = open("$folder/D.raw", "r")
 
-    a_array = reshape( reinterpret( Float64, read(a_file) ), dims )
-    b_array = reshape( reinterpret( Float64, read(b_file) ), dims )
-    c_array = reshape( reinterpret( Float64, read(c_file) ), dims )
-    d_array = reshape( reinterpret( Float64, read(d_file) ), dims )
+    seek(a_file, slice_offset)
+    seek(b_file, slice_offset)
+    seek(c_file, slice_offset)
+    seek(d_file, slice_offset)
+
+    a_array = reshape( reinterpret( Float64, read(a_file, slice_bytes) ), dims )
+    b_array = reshape( reinterpret( Float64, read(b_file, slice_bytes) ), dims )
+    c_array = reshape( reinterpret( Float64, read(c_file, slice_bytes) ), dims )
+    d_array = reshape( reinterpret( Float64, read(d_file, slice_bytes) ), dims )
 
     close(a_file)
     close(b_file)
     close(c_file)
     close(d_file)
-
-
 
     for j in 1:dims[2]-1
         for i in 1:dims[1]-1

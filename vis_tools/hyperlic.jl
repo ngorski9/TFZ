@@ -220,7 +220,7 @@ function interpolate(tf::TensorField,v::Vec)
     yFloor = Int64(floor(y))
     xFrac = x - floor(x)
     yFrac = y - floor(y)
-    if xFrac - yFrac <= 1
+    if xFrac + yFrac <= 1
         # bottom cell
         a = tf.a[xFloor + 1, yFloor] * xFrac + tf.a[xFloor, yFloor + 1] * yFrac + tf.a[xFloor, yFloor] * (1 - xFrac - yFrac)
         b = tf.b[xFloor + 1, yFloor] * xFrac + tf.b[xFloor, yFloor + 1] * yFrac + tf.b[xFloor, yFloor] * (1 - xFrac - yFrac)
@@ -231,16 +231,15 @@ function interpolate(tf::TensorField,v::Vec)
     else
         # top cell
         a = tf.a[xFloor, yFloor + 1] * (1 - xFrac) + tf.a[xFloor + 1, yFloor] * (1 - yFrac) + tf.a[xFloor + 1, yFloor + 1] * (xFrac + yFrac - 1)
-        a = tf.b[xFloor, yFloor + 1] * (1 - xFrac) + tf.b[xFloor + 1, yFloor] * (1 - yFrac) + tf.b[xFloor + 1, yFloor + 1] * (xFrac + yFrac - 1)
-        a = tf.c[xFloor, yFloor + 1] * (1 - xFrac) + tf.c[xFloor + 1, yFloor] * (1 - yFrac) + tf.c[xFloor + 1, yFloor + 1] * (xFrac + yFrac - 1)
-        a = tf.d[xFloor, yFloor + 1] * (1 - xFrac) + tf.d[xFloor + 1, yFloor] * (1 - yFrac) + tf.d[xFloor + 1, yFloor + 1] * (xFrac + yFrac - 1)
+        b = tf.b[xFloor, yFloor + 1] * (1 - xFrac) + tf.b[xFloor + 1, yFloor] * (1 - yFrac) + tf.b[xFloor + 1, yFloor + 1] * (xFrac + yFrac - 1)
+        c = tf.c[xFloor, yFloor + 1] * (1 - xFrac) + tf.c[xFloor + 1, yFloor] * (1 - yFrac) + tf.c[xFloor + 1, yFloor + 1] * (xFrac + yFrac - 1)
+        d = tf.d[xFloor, yFloor + 1] * (1 - xFrac) + tf.d[xFloor + 1, yFloor] * (1 - yFrac) + tf.d[xFloor + 1, yFloor + 1] * (xFrac + yFrac - 1)
 
         return Tensor(a,b,c,d)
     end
 
 end
 
-# expensive lol
 function rk4_vector(tf::TensorField, x::Vec, δ::Float64, lastVector::Vec, dual::Bool, evecScale::Float64=0.0)
 
     t1 = interpolate(tf, x)
@@ -283,24 +282,12 @@ function rk4_vector(tf::TensorField, x::Vec, δ::Float64, lastVector::Vec, dual:
     end
     d = δ * e4
 
-    if dot(lastVector, a+2b+2c+d) < 0
-        println("something is wrong")
-        println((e1,e2,e3,e4))
-        println((a,b,c,d))
-        println(lastVector)
-        println((dot(lastVector, a), dot(lastVector,b), dot(lastVector,c), dot(lastVector,d)))
-    end
-
     return (a + 2b + 2c + d) / 6
 
 end
 
 function to_pixel(x, scale)
     return (Int64(floor( (x.u-1)*scale+1 )), Int64(floor( (x.v-1)*scale+1 )))
-end
-
-function to_vec(px_x, px_y, scale)
-    return 
 end
 
 function pixel_near(px,list)
@@ -314,52 +301,119 @@ function pixel_near(px,list)
     return false
 end
 
-function main()
-    Random.seed!(2)
-    t1 = time()
+function help()
+    println("Usage: hyperlic.jl <folder> <saveName> <size x> <size y> <scale> <arguments>")
+    println("See the README for more details.")
+    println()
+    println("Positional Arguments")
+    println("\tfolder : Folder containing the tensor field to visualize.")
+    println("\tsaveName :")
+    println("\t\tName of output files to be produced. Two files will be created:")
+    println("\t\t<saveName>.vti will contain the tensorlines,")
+    println("\t\twhile <saveName>.vtu will contain the degenerate points.")
+    println("\t<size x> <size y> : The dimensions of the tensor field.")
+    println("\t<scale> :")
+    println("\t\tHow many mesh cells should be present in the output mesh along")
+    println("\t\teach dimension for each cell in the input mesh. Setting this")
+    println("\t\tequal to 1 will create an output mesh that is the same")
+    println("\t\tsize as the input mesh.")
+    println()
+    println("Optional Arguments")
+    println("\t-asym :")
+    println("\t\tCompute a LIC visualization for the symmetric component")
+    println("\t\tof an asymmetric tensor field.")
+    println("\t-slice :")
+    println("\t\tVisualize a 2D slice taken from a collection of 2D tensor")
+    println("\t\tfields that are stacked into a single file.")
+    println("\t-block_size :")
+    println("\t\tHow many blocks to use in each dimension for fastLIC")
+    println("\t\t(default 20).")
+    println("\t-hit_threshold :")
+    println("\t\tHow many times does a pixel need to be visited before")
+    println("\t\tit is skipped for LIC (default 8).")
+    println("\t-delta :")
+    println("\t\tstep size when computing streamlines as a percentage")
+    println("\t\tof mesh cell size (set between 0 and 1; default 0.01).")
+    println("\t-seed : seed for random number generator.")
+end
 
-    if length(ARGS) == 0
-        folder = "../output/reconstructed"
-        saveName = "../LIC2"
-        size = (66, 108)
-        scale = 3
-        evecScale=0.0
-        power = 1.0
-    else
-        try
-            folder = ARGS[1]
-            saveName = ARGS[2]
-            size = (parse(Int64,ARGS[3]),parse(Int64,ARGS[4]))
-            scale = parse(Int64,ARGS[5])
-            evecScale = 0.0
-            if length(ARGS) >= 6
-                power = parse(Float64,ARGS[6])
-            else
-                power = 1.0
-            end
-        catch
-            println("ERROR: Format is folder saveName size[1] size[2] scale (power)")
-            exit()
+function main()
+    folder = ""
+    saveName = ""
+    size = (0,0)
+    scale = 0
+    evecScale = 0.0
+    slice = 1
+    asymmetric = false
+    block_size = 20
+    hit_threshold = 8
+    δ = 0.01
+    power = 1.0
+
+    try
+        if ARGS[1] == "-h" || ARGS[1] == "-help"
+            help()
+            exit(0)
         end
+
+        folder = ARGS[1]
+        saveName = ARGS[2]
+        size = (parse(Int64,ARGS[3]),parse(Int64,ARGS[4]))
+        scale = parse(Int64,ARGS[5])
+
+        i = 6
+        while i < length(ARGS)
+            if ARGS[i] == "-asym"
+                asymmetric = true
+                i += 1
+            elseif ARGS[i] == "-slice"
+                slice = parse(Int64, ARGS[i+1])
+                i += 2
+            elseif ARGS[i] == "-block_size"
+                block_size = parse(Int64, ARGS[i+1])
+                i += 2
+            elseif ARGS[i] == "-hit_threshoold"
+                hit_threshold = parse(Int64, ARGS[i+1])
+                i += 2
+            elseif ARGS[i] == "-delta"
+                δ = parse(Float64, ARGS[i+1])
+                i += 2
+            elseif ARGS[i] == "-seed"
+                seed = parse(Int64, ARGS[i+1])
+                Random.seed!(seed)
+                i += 2
+            else
+                raise(ErrorException)
+            end
+        end
+    catch
+        println("hyperlic.jl: usage is <folder> <saveName> <size x> <size y> <scale> <arguments>")
+        println("Run hyperlic.jl -h for help.")
+        exit()
     end
 
-    # don't think I'm gonna use this again.
-    alt_folder = ""
-    load_lic = ""
-    save_lic = ""
+    if slice <= 0
+        println("hyperlic.jl: slice number should be positive.")
+        exit(1)
+    end
 
-    # old settings: num_steps: 60
-    # max_path_tracing = 60
-    # block_size = 20
-    # delta: 0.1
+    if block_size <= 0
+        println("hyperlic.jl: block size should be positive.")
+        exit(1)
+    end
+
+    if hit_threshold <= 0
+        println("hyperlic.jl: hit threshold should be positive.")
+        exit(1)
+    end
+
+    if δ <= 0
+        println("hyperlic.jl: delta should be positive.")
+        exit(1)
+    end
 
     num_steps = 180 # Interpolation length
     max_path_tracing = 180 # kill after a certain number of steps to avoid loops
-    block_size = 20
-    hit_threshold = 8
-    # δ = 0.01
-    δ = 0.1
-    asymmetric = false
 
     # load and set up the tensor field
     a = time()
@@ -367,20 +421,24 @@ function main()
     b_file = open("$folder/B.raw", "r")
     d_file = open("$folder/D.raw", "r")
 
-    a_array = reshape( reinterpret( Float64, read(a_file) ), size )
-    b_array = reshape( reinterpret( Float64, read(b_file) ), size )
-    d_array = reshape( reinterpret( Float64, read(d_file) ), size )
+    slice_bytes = 8*size[1]*size[2]
+    slice_offset = slice_bytes*(slice-1)
+
+    seek(a_file, slice_offset)
+    seek(b_file, slice_offset)
+    seek(d_file, slice_offset)
+
+    a_array = reshape( reinterpret( Float64, read(a_file, slice_bytes) ), size )
+    b_array = reshape( reinterpret( Float64, read(b_file, slice_bytes) ), size )
+    d_array = reshape( reinterpret( Float64, read(d_file, slice_bytes) ), size )
 
     if asymmetric
         c_file = open("$folder/C.raw", "r")
-        c_array = reshape( reinterpret( Float64, read(c_file) ), size )
+        seek(c_file, slice_offset)
+        c_array = reshape( reinterpret( Float64, read(c_file, slice_bytes) ), size )
     else
         c_array = b_array
     end
-
-    # for i in 1:dims[2]
-    #     println((a_array[1,i],b_array[1,i],c_array[1,i]))
-    # end
 
     tf = TensorField(size[1], size[2], a_array, b_array, c_array, d_array)
 
@@ -395,7 +453,7 @@ function main()
 
     imageSize = ( (size[1]-1)*scale, (size[2]-1)*scale )
     noise = zeros(Float64, imageSize )
-    # randomNoise(noise)
+
     randomCircles(noise, scale-1)
     for j in 1:imageSize[2]
         for i in 2:imageSize[1]
@@ -412,241 +470,210 @@ function main()
 
     finalImage = zeros(Float64, imageSize)
     frobenius = zeros(Float64, imageSize)
-    majorEigval = zeros(Float64, imageSize)
 
-    if load_lic != ""
-        inf = open(load_lic, "r")
-        inBytes = reshape(reinterpret(Float64,read(inf)),imageSize)
-        for j in 1:imageSize[2]
-            for i in 1:imageSize[1]
-                finalImage[i,j] = inBytes[i,j]
-            end
-        end
-    else
-        # finalImage = noise
-        numHits = zeros(Int64, imageSize)
+    numHits = zeros(Int64, imageSize)
 
-        # iterate and create streamlines
-        blocks_dims = ( Int64(ceil(imageSize[1] / block_size)), Int64(ceil(imageSize[2] / block_size)) )
+    # iterate and create streamlines
+    blocks_dims = ( Int64(ceil(imageSize[1] / block_size)), Int64(ceil(imageSize[2] / block_size)) )
 
-        numSkips = 0
+    numSkips = 0
 
-        for y in 1:block_size
-            for x in 1:block_size
-                println((x,y,numSkips))
-                for by = 1:blocks_dims[2]
-                    for bx in 1:blocks_dims[1]
+    for y in 1:block_size
+        for x in 1:block_size
+            print("Computing pixel block $(x + (y-1)*block_size) / $(block_size^2)\r")
+            for by = 1:blocks_dims[2]
+                for bx in 1:blocks_dims[1]
 
-                        px = (bx-1) * block_size + x
-                        py = (by-1) * block_size + y
+                    px = (bx-1) * block_size + x
+                    py = (by-1) * block_size + y
 
-                        if px <= imageSize[1] && py <= imageSize[2]
+                    if px <= imageSize[1] && py <= imageSize[2]
 
-                            # compute the frobenius mse at this pixel
-                            center = Vec( (px + 0.5 - 1.0) / scale + 1, (py + 0.5 - 1.0) / scale + 1 )
-                            tCenter = interpolate(tf, center)
-                            frobenius[ px, py ] = sqrt( tCenter.a^2 + tCenter.b^2 + tCenter.c^2 + tCenter.d^2 )
-                            majorEigval[px, py] = (tCenter.a+tCenter.d)/2 + sqrt( (tCenter.d-tCenter.a)^2 + (tCenter.b+tCenter.c)^2 )/2
+                        # compute the frobenius mse at this pixel
+                        center = Vec( (px + 0.5 - 1.0) / scale + 1, (py + 0.5 - 1.0) / scale + 1 )
+                        tCenter = interpolate(tf, center)
+                        frobenius[ px, py ] = sqrt( tCenter.a^2 + tCenter.b^2 + tCenter.c^2 + tCenter.d^2 )
 
-                            # skip the LIC here if a sufficient number of hits have been hit already.
-                            if numHits[px,py] >= hit_threshold
-                                numSkips += 1
+                        # skip the LIC here if a sufficient number of hits have been hit already.
+                        if numHits[px,py] >= hit_threshold
+                            numSkips += 1
+                            continue
+                        end
+
+                        seed = Vec( (px + rand() - 1) / scale + 1, (py + rand() - 1) / scale + 1 )
+
+                        # compute pixels in the path around the seed point
+
+                        pixels = Deque{Tuple{Int64, Int64}}()
+                        push!(pixels, (px, py))
+
+                        # Compute initial eigenvectors for seeding
+
+                        tRoot = interpolate(tf, seed)
+                        evecRoot = vector(tRoot,asymmetric)
+
+                        # forward pass
+                        num_forward = 0
+                        xf = seed
+
+                        vf = evecRoot
+                        for step in 1:num_steps
+                            vf = rk4_vector(tf, xf, δ, vf, asymmetric, evecScale)
+                            xf = xf + vf
+                            if !inBounds(tf, xf)
+                                break
+                            end
+                            push!(pixels, to_pixel(xf,scale))
+                            num_forward += 1
+                            # if pixel_near(xf, wedge_pixels)
+                            #     break
+                            # end
+                        end
+
+                        # backward pass
+                        num_backward = 0
+                        xb = seed
+                        vb = -evecRoot
+                        for step in 1:num_steps
+                            vb = rk4_vector(tf, xb, δ, vb, asymmetric, evecScale)
+                            xb = xb + vb
+                            if !inBounds(tf, xb)
+                                break
+                            end
+                            pushfirst!(pixels, to_pixel(xb,scale))
+                            num_backward += 1
+                        end
+                        
+                        intensity = 0
+
+                        for pixel in pixels
+                            intensity += noise[pixel[1],pixel[2]]
+                        end
+
+                        finalImage[ px, py ] += intensity / length(pixels)
+                        numHits[ px, py ] += 1
+                    
+                        # propagate intensities forward
+
+                        pixels_f = collect(pixels)
+                        head_f = num_forward # the number of pixels in front of the one that we are currently working with.
+                        tail_f = num_backward # the number of pixels behind the one that we are currently working with.
+                        tail_f_position = 1
+                        intensity_f = intensity
+                        steps = 0 # kill counter to avoid getting stuck in a loop
+
+                        if num_forward < num_steps
+                            at_edge = true
+                        else
+                            at_edge = false
+                        end
+
+                        index = 0
+                        for pixel in pixels_f
+                            index += 1
+                            if index <= num_backward
                                 continue
                             end
 
-                            seed = Vec( (px + rand() - 1) / scale + 1, (py + rand() - 1) / scale + 1 )
+                            steps += 1
+                            if steps >= max_path_tracing
+                                break
+                            end
 
-                            # compute pixels in the path around the seed point
-
-                            pixels = Deque{Tuple{Int64, Int64}}()
-                            push!(pixels, (px, py))
-
-                            # Compute initial eigenvectors for seeding
-
-                            tRoot = interpolate(tf, seed)
-                            evecRoot = vector(tRoot,asymmetric)
-
-                            # forward pass
-                            num_forward = 0
-                            xf = seed
-
-                            vf = evecRoot
-                            for step in 1:num_steps
+                            if !at_edge
                                 vf = rk4_vector(tf, xf, δ, vf, asymmetric, evecScale)
                                 xf = xf + vf
                                 if !inBounds(tf, xf)
-                                    break
+                                    at_edge = true
                                 end
-                                push!(pixels, to_pixel(xf,scale))
-                                num_forward += 1
-                                # if pixel_near(xf, wedge_pixels)
-                                #     break
-                                # end
                             end
 
-                            # backward pass
-                            num_backward = 0
-                            xb = seed
-                            vb = -evecRoot
-                            for step in 1:num_steps
+                            if tail_f < num_steps
+                                tail_f += 1
+                            else
+                                furthestTail = pixels_f[tail_f_position]
+                                intensity_f -= noise[ furthestTail[1], furthestTail[2] ]
+                                tail_f_position += 1
+                            end
+
+                            if at_edge
+                                head_f -= 1
+                            else
+                                nextPixel = to_pixel(xf,scale)
+                                push!(pixels_f, nextPixel)
+                                intensity_f += noise[ nextPixel[1], nextPixel[2] ]
+                            end
+
+                            finalImage[ pixel[1], pixel[2] ] += intensity_f / ( head_f + tail_f + 1 )
+                            numHits[ pixel[1], pixel[2] ] += 1
+                        end
+
+                        # propagate intensities backward
+
+                        pixels_b = reverse(collect(pixels))
+                        head_b = num_backward # the number of pixels in front of the one that we are currently working with.
+                        tail_b = num_forward # the number of pixels behind the one that we are currently working with.
+                        tail_b_position = 1
+                        intensity_b = intensity
+
+                        if num_backward < num_steps
+                            at_edge = true
+                        else
+                            at_edge = false
+                        end
+
+                        index = 0
+                        for pixel in pixels_b
+                            index += 1
+                            if index <= num_forward
+                                continue
+                            end
+
+                            steps += 1
+                            if steps >= max_path_tracing
+                                break
+                            end
+
+                            if !at_edge
                                 vb = rk4_vector(tf, xb, δ, vb, asymmetric, evecScale)
                                 xb = xb + vb
                                 if !inBounds(tf, xb)
-                                    break
+                                    at_edge = true
                                 end
-                                pushfirst!(pixels, to_pixel(xb,scale))
-                                # if pixel_near(first(pixels), wedge_pixels)
-                                #     break
-                                # end
-                                num_backward += 1
-                            end
-                            
-                            intensity = 0
-
-                            for pixel in pixels
-                                intensity += noise[pixel[1],pixel[2]]
                             end
 
-                            finalImage[ px, py ] += intensity / length(pixels)
-                            numHits[ px, py ] += 1
-                        
-                            # propagate intensities forward
-
-                            pixels_f = collect(pixels)
-                            head_f = num_forward # the number of pixels in front of the one that we are currently working with.
-                            tail_f = num_backward # the number of pixels behind the one that we are currently working with.
-                            tail_f_position = 1
-                            intensity_f = intensity
-                            steps = 0 # kill counter to avoid getting stuck in a loop
-
-                            if num_forward < num_steps
-                                at_edge = true
+                            if tail_b < num_steps
+                                tail_b += 1
                             else
-                                at_edge = false
+                                furthestTail = pixels_b[tail_b_position]
+                                intensity_b -= noise[ furthestTail[1], furthestTail[2] ]
+                                tail_b_position += 1
                             end
 
-                            index = 0
-                            for pixel in pixels_f
-                                index += 1
-                                if index <= num_backward
-                                    continue
-                                end
-
-                                steps += 1
-                                if steps >= max_path_tracing
-                                    break
-                                end
-
-                                if !at_edge
-                                    vf = rk4_vector(tf, xf, δ, vf, asymmetric, evecScale)
-                                    xf = xf + vf
-                                    if !inBounds(tf, xf)
-                                        at_edge = true
-                                    end
-                                end
-
-                                if tail_f < num_steps
-                                    tail_f += 1
-                                else
-                                    furthestTail = pixels_f[tail_f_position]
-                                    intensity_f -= noise[ furthestTail[1], furthestTail[2] ]
-                                    tail_f_position += 1
-                                end
-
-                                if at_edge
-                                    head_f -= 1
-                                else
-                                    nextPixel = to_pixel(xf,scale)
-                                    push!(pixels_f, nextPixel)
-                                    intensity_f += noise[ nextPixel[1], nextPixel[2] ]
-                                    # if pixel_near(nextPixel, wedge_pixels)
-                                    #     at_edge = true
-                                    # end
-                                end
-
-                                finalImage[ pixel[1], pixel[2] ] += intensity_f / ( head_f + tail_f + 1 )
-                                numHits[ pixel[1], pixel[2] ] += 1
-                            end
-
-                            # propagate intensities backward
-
-                            pixels_b = reverse(collect(pixels))
-                            head_b = num_backward # the number of pixels in front of the one that we are currently working with.
-                            tail_b = num_forward # the number of pixels behind the one that we are currently working with.
-                            tail_b_position = 1
-                            intensity_b = intensity
-
-                            if num_backward < num_steps
-                                at_edge = true
+                            if at_edge
+                                head_b -= 1
                             else
-                                at_edge = false
+                                nextPixel = to_pixel(xb,scale)
+                                push!(pixels_b, nextPixel)
+                                intensity_b += noise[ nextPixel[1], nextPixel[2] ]
                             end
 
-                            index = 0
-                            for pixel in pixels_b
-                                index += 1
-                                if index <= num_forward
-                                    continue
-                                end
+                            finalImage[ pixel[1], pixel[2] ] += intensity_b / ( head_b + tail_b + 1 )
+                            numHits[ pixel[1], pixel[2] ] += 1
 
-                                steps += 1
-                                if steps >= max_path_tracing
-                                    break
-                                end
+                        end
 
-                                if !at_edge
-                                    vb = rk4_vector(tf, xb, δ, vb, asymmetric, evecScale)
-                                    xb = xb + vb
-                                    if !inBounds(tf, xb)
-                                        at_edge = true
-                                    end
-                                end
+                    end # end if px and py are valid coordinates
 
-                                if tail_b < num_steps
-                                    tail_b += 1
-                                else
-                                    furthestTail = pixels_b[tail_b_position]
-                                    intensity_b -= noise[ furthestTail[1], furthestTail[2] ]
-                                    tail_b_position += 1
-                                end
+                end # end for bx in 1:blocks_dims[1]
+            end # end for by in 1:blocks_dims[2]
+        end # end for x in 1:block_size
+    end # end for y in 1:block_size
 
-                                if at_edge
-                                    head_b -= 1
-                                else
-                                    nextPixel = to_pixel(xb,scale)
-                                    push!(pixels_b, nextPixel)
-                                    intensity_b += noise[ nextPixel[1], nextPixel[2] ]
-                                    # if pixel_near(nextPixel, wedge_pixels)
-                                    #     at_edge = true
-                                    # end
-                                end
-
-                                finalImage[ pixel[1], pixel[2] ] += intensity_b / ( head_b + tail_b + 1 )
-                                numHits[ pixel[1], pixel[2] ] += 1
-
-                            end
-
-                        end # end if px and py are valid coordinates
-
-                    end # end for bx in 1:blocks_dims[1]
-                end # end for by in 1:blocks_dims[2]
-            end # end for x in 1:block_size
-        end # end for y in 1:block_size
-
-        for j in 1:imageSize[2]
-            for i in 1:imageSize[1]
-                finalImage[i,j] /= numHits[i,j]
-            end
+    for j in 1:imageSize[2]
+        for i in 1:imageSize[1]
+            finalImage[i,j] /= numHits[i,j]
         end
-    end
-
-    t2 = time()
-    println(t2-t1)
-
-    if save_lic != ""
-        outf = open(save_lic, "w")
-        write(outf, finalImage)
-        close(outf)
     end
 
     # visualize
@@ -655,7 +682,6 @@ function main()
     vtk_grid(saveName, 0:1:imageSize[1]-1,0:1:imageSize[2]-1,0:1:0) do vtk
         vtk["frobenius"] = frobenius
         vtk["LIC"] = finalImage
-        vtk["Major Eigval"] = majorEigval
     end
 
     cp_colors::Array{Tuple{UInt8,UInt8,UInt8}} = Array{Tuple{UInt8,UInt8,UInt8}}(undef, 2)
