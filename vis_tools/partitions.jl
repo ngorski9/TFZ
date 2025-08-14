@@ -123,10 +123,10 @@ function main()
     cp_categorical_vec::Array{Float64} = Array{Float64}(undef,0)
 
 
-    a_file = open("$folder/row_1_col_1.dat", "r")
-    b_file = open("$folder/row_1_col_2.dat", "r")
-    c_file = open("$folder/row_2_col_1.dat", "r")
-    d_file = open("$folder/row_2_col_2.dat", "r")
+    a_file = open("$folder/A.raw", "r")
+    b_file = open("$folder/B.raw", "r")
+    c_file = open("$folder/C.raw", "r")
+    d_file = open("$folder/D.raw", "r")
 
     a_array = reshape( reinterpret( Float64, read(a_file) ), dims )
     b_array = reshape( reinterpret( Float64, read(b_file) ), dims )

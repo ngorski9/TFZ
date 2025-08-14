@@ -63,39 +63,39 @@ end
 function loadTFFromFolder(folder::String, dims::Tuple{Int64, Int64, Int64})
 
     num_entries = dims[1]*dims[2]*dims[3]
-    num_bytes = filesize("$folder/row_1_col_1.dat")/num_entries
+    num_bytes = filesize("$folder/A.raw")/num_entries
 
     if num_bytes == 8
-        A_byte_file = open("$folder/row_1_col_1.dat", "r")
+        A_byte_file = open("$folder/A.raw", "r")
         A = reshape( reinterpret( Float64, read(A_byte_file) ), dims )
         close(A_byte_file)
     
-        B_byte_file = open("$folder/row_1_col_2.dat", "r")
+        B_byte_file = open("$folder/B.raw", "r")
         B = reshape( reinterpret( Float64, read(B_byte_file) ), dims )
         close(B_byte_file)
     
-        C_byte_file = open("$folder/row_2_col_1.dat", "r")
+        C_byte_file = open("$folder/C.raw", "r")
         C = reshape( reinterpret( Float64, read(C_byte_file) ), dims )
         close(C_byte_file)
     
-        D_byte_file = open("$folder/row_2_col_2.dat", "r")
+        D_byte_file = open("$folder/D.raw", "r")
         D = reshape( reinterpret( Float64, read(D_byte_file) ), dims )
         close(D_byte_file)
     elseif num_bytes == 4
         println("loading from 32 bits to 64")
-        A_byte_file = open("$folder/row_1_col_1.dat", "r")
+        A_byte_file = open("$folder/A.raw", "r")
         A = Array{Float64}(reshape( reinterpret( Float32, read(A_byte_file) ), dims ))
         close(A_byte_file)
     
-        B_byte_file = open("$folder/row_1_col_2.dat", "r")
+        B_byte_file = open("$folder/B.raw", "r")
         B = Array{Float64}(reshape( reinterpret( Float32, read(B_byte_file) ), dims ))
         close(B_byte_file)
     
-        C_byte_file = open("$folder/row_2_col_1.dat", "r")
+        C_byte_file = open("$folder/C.raw", "r")
         C = Array{Float64}(reshape( reinterpret( Float32, read(C_byte_file) ), dims ))
         close(C_byte_file)
     
-        D_byte_file = open("$folder/row_2_col_2.dat", "r")
+        D_byte_file = open("$folder/D.raw", "r")
         D = Array{Float64}(reshape( reinterpret( Float32, read(D_byte_file) ), dims ))
         close(D_byte_file)
     else
@@ -123,33 +123,32 @@ function loadTFFromFolder(folder::String, dims::Tuple{Int64, Int64, Int64})
 end
 
 function loadTFFromFolderSym(folder::String, dims::Tuple{Int64, Int64, Int64})
-
     num_entries = dims[1]*dims[2]*dims[3]
-    num_bytes = filesize("$folder/row_1_col_1.dat")/num_entries
+    num_bytes = filesize("$folder/A.raw")/num_entries
 
     if num_bytes == 8
-        A_byte_file = open("$folder/row_1_col_1.dat", "r")
+        A_byte_file = open("$folder/A.raw", "r")
         A = reshape( reinterpret( Float64, read(A_byte_file) ), dims )
         close(A_byte_file)
     
-        B_byte_file = open("$folder/row_1_col_2.dat", "r")
+        B_byte_file = open("$folder/B.raw", "r")
         B = reshape( reinterpret( Float64, read(B_byte_file) ), dims )
         close(B_byte_file)
     
-        D_byte_file = open("$folder/row_2_col_2.dat", "r")
+        D_byte_file = open("$folder/D.raw", "r")
         D = reshape( reinterpret( Float64, read(D_byte_file) ), dims )
         close(D_byte_file)
     elseif num_bytes == 4
         println("loading from 32 bits to 64")
-        A_byte_file = open("$folder/row_1_col_1.dat", "r")
+        A_byte_file = open("$folder/A.raw", "r")
         A = Array{Float64}(reshape( reinterpret( Float32, read(A_byte_file) ), dims ))
         close(A_byte_file)
     
-        B_byte_file = open("$folder/row_1_col_2.dat", "r")
+        B_byte_file = open("$folder/B.raw", "r")
         B = Array{Float64}(reshape( reinterpret( Float32, read(B_byte_file) ), dims ))
         close(B_byte_file)
     
-        D_byte_file = open("$folder/row_2_col_2.dat", "r")
+        D_byte_file = open("$folder/D.raw", "r")
         D = Array{Float64}(reshape( reinterpret( Float32, read(D_byte_file) ), dims ))
         close(D_byte_file)
     else
@@ -206,29 +205,29 @@ function getMinAndMax(tf::TF_Sym)
 end
 
 function saveTF64(folder::String, tf::TF, suffix::String="")
-    saveArray64("$folder/row_1_col_1$suffix.dat", tf.entries[1,:,:,:])
-    saveArray64("$folder/row_1_col_2$suffix.dat", tf.entries[2,:,:,:])
-    saveArray64("$folder/row_2_col_1$suffix.dat", tf.entries[3,:,:,:])
-    saveArray64("$folder/row_2_col_2$suffix.dat", tf.entries[4,:,:,:])
+    saveArray64("$folder/A$suffix.raw", tf.entries[1,:,:,:])
+    saveArray64("$folder/B$suffix.raw", tf.entries[2,:,:,:])
+    saveArray64("$folder/C$suffix.raw", tf.entries[3,:,:,:])
+    saveArray64("$folder/D$suffix.raw", tf.entries[4,:,:,:])
 end
 
 function saveTF64(folder::String, tf::TF_Sym, suffix::String="")
-    saveArray64("$folder/row_1_col_1$suffix.dat", tf.entries[1,:,:,:])
-    saveArray64("$folder/row_1_col_2$suffix.dat", tf.entries[2,:,:,:])
-    saveArray64("$folder/row_2_col_2$suffix.dat", tf.entries[3,:,:,:])
+    saveArray64("$folder/A$suffix.raw", tf.entries[1,:,:,:])
+    saveArray64("$folder/B$suffix.raw", tf.entries[2,:,:,:])
+    saveArray64("$folder/D$suffix.raw", tf.entries[3,:,:,:])
 end
 
 function saveTF32(folder::String, tf::TF, suffix::String="")
-    saveArray32("$folder/row_1_col_1$suffix.dat", tf.entries[1,:,:,:])
-    saveArray32("$folder/row_1_col_2$suffix.dat", tf.entries[2,:,:,:])
-    saveArray32("$folder/row_2_col_1$suffix.dat", tf.entries[3,:,:,:])
-    saveArray32("$folder/row_2_col_2$suffix.dat", tf.entries[4,:,:,:])
+    saveArray32("$folder/A$suffix.raw", tf.entries[1,:,:,:])
+    saveArray32("$folder/B$suffix.raw", tf.entries[2,:,:,:])
+    saveArray32("$folder/C$suffix.raw", tf.entries[3,:,:,:])
+    saveArray32("$folder/D$suffix.raw", tf.entries[4,:,:,:])
 end
 
 function saveTF32(folder::String, tf::TF_Sym, suffix::String="")
-    saveArray32("$folder/row_1_col_1$suffix.dat", tf.entries[1,:,:,:])
-    saveArray32("$folder/row_1_col_2$suffix.dat", tf.entries[2,:,:,:])
-    saveArray32("$folder/row_2_col_2$suffix.dat", tf.entries[3,:,:,:])
+    saveArray32("$folder/A$suffix.raw", tf.entries[1,:,:,:])
+    saveArray32("$folder/B$suffix.raw", tf.entries[2,:,:,:])
+    saveArray32("$folder/D$suffix.raw", tf.entries[3,:,:,:])
 end
 
 function getTensor(tf::TF, x::Int64, y::Int64, t::Int64)

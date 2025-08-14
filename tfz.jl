@@ -320,7 +320,11 @@ function main()
         totalCellMatching = MArray{Tuple{7}}(zeros(Int64, (7,)))
         
         combined_visit_counts = zeros(Int64, 1)
-        tf = loadTFFromFolder(data_folder, (slice_size[1],slice_size[2],num_slices))
+        if symmetric
+            tf = loadTFFromFolderSym(data_folder, (slice_size[1],slice_size[2],num_slices))
+        else
+            tf = loadTFFromFolder(data_folder, (slice_size[1],slice_size[2],num_slices))
+        end
 
         stdout_ = stdout
 
@@ -368,10 +372,14 @@ function main()
 
             removeIfExists("$output/slice")
             run(`mkdir $output/slice`)
-            saveArray64("$output/slice/row_1_col_1.dat", tf.entries[1,:,:,t])
-            saveArray64("$output/slice/row_1_col_2.dat", tf.entries[2,:,:,t])
-            saveArray64("$output/slice/row_2_col_1.dat", tf.entries[3,:,:,t])
-            saveArray64("$output/slice/row_2_col_2.dat", tf.entries[4,:,:,t])
+            saveArray64("$output/slice/A.raw", tf.entries[1,:,:,t])
+            saveArray64("$output/slice/B.raw", tf.entries[2,:,:,t])
+            if symmetric
+                saveArray64("$output/slice/D.raw", tf.entries[3,:,:,t])
+            else
+                saveArray64("$output/slice/C.raw", tf.entries[3,:,:,t])
+                saveArray64("$output/slice/D.raw", tf.entries[4,:,:,t])
+            end
 
             compression_start = time()
 

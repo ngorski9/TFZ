@@ -363,16 +363,16 @@ function main()
 
     # load and set up the tensor field
     a = time()
-    a_file = open("$folder/row_1_col_1.dat", "r")
-    b_file = open("$folder/row_1_col_2.dat", "r")
-    d_file = open("$folder/row_2_col_2.dat", "r")
+    a_file = open("$folder/A.raw", "r")
+    b_file = open("$folder/B.raw", "r")
+    d_file = open("$folder/D.raw", "r")
 
     a_array = reshape( reinterpret( Float64, read(a_file) ), size )
     b_array = reshape( reinterpret( Float64, read(b_file) ), size )
     d_array = reshape( reinterpret( Float64, read(d_file) ), size )
 
     if asymmetric
-        c_file = open("$folder/row_2_col_1.dat", "r")
+        c_file = open("$folder/C.raw", "r")
         c_array = reshape( reinterpret( Float64, read(c_file) ), size )
     else
         c_array = b_array

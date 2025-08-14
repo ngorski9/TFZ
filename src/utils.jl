@@ -166,10 +166,10 @@ const eigenvalueRegionBorders = Dict(
 #     tf = loadTensorField2dFromFolder(folder, dims)
 
 #     run(`mkdir $output/slice`)
-#     saveArray64("$output/slice/row_1_col_1.dat", tf.entries[1,:,:,t])
-#     saveArray64("$output/slice/row_1_col_2.dat", tf.entries[2,:,:,t])
-#     saveArray64("$output/slice/row_2_col_1.dat", tf.entries[3,:,:,t])
-#     saveArray64("$output/slice/row_2_col_2.dat", tf.entries[4,:,:,t])
+#     saveArray64("$output/slice/A.raw", tf.entries[1,:,:,t])
+#     saveArray64("$output/slice/B.raw", tf.entries[2,:,:,t])
+#     saveArray64("$output/slice/C.raw", tf.entries[3,:,:,t])
+#     saveArray64("$output/slice/D.raw", tf.entries[4,:,:,t])
 
 # end
 
