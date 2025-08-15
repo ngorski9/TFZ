@@ -51,7 +51,7 @@ Run ```julia tfz.jl <arguments>```. All options can be viewed by running ```juli
 
 - TFZ makes a lot of system calls, so by default ```stdout``` and ```stderr``` are suppressed. To view any printouts (such as in the event of a crash), use ```-verbose```.
 
-#### Specifying Files
+### Specifying Files
 
 - When specifying an input with the ```-i``` flag, list the name of the directory that contains ```A.raw```, ```B.raw```, ```C.raw```, and ```D.raw```.
 - Suppose that you specify compressed name `Z` using the `-z` flag and decompressed name `O` using the `-o` flag:
@@ -62,7 +62,7 @@ Run ```julia tfz.jl <arguments>```. All options can be viewed by running ```juli
     - Because Julia is 1-indexed, the first slice has index 1.
     - To decompress a single file out of a collection, specify the name of the ```.tar.zst``` file rather than using ```-slice```.
 
-#### Experiment Flag
+### Experiment Flag
 
 - Use ```-experiment``` to collect data using TFZ.
 - Use the ```-csv``` flag to save the results of an experiment to a CSV file. If the CSV file already exists, a new row will be appended to the end containing the information from the current experiment.
