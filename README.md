@@ -17,6 +17,8 @@ As in the publication, we represent each tensor field as a flat triangular mesh.
 
 $\sqrt{x+1}$
 
+$\frac{1}{2}$
+
 Our support tensor field data stores in RAW binary format. A tensor field is stored as a directory containing four files: ```A.raw```, ```B.raw```, ```C.raw```, and ```D.raw```. If $f x \mapsto \begin{bmatrix} A(x) & B(x) \\ C(x) & D(X) \end{bmatrix}$ is the tensor field, then our files respectively store the values of the scalar fields $A$, $B$, $C$, and $D$ at each vertex point. Internally, the name of the tensor field is referenced by the name of the directory.
 
 $A$, $B$, $C$, and $D$ should be stored as double precision floating point values stored in little endian. The scalar fields should be stored in column-major (Fortran) order.
