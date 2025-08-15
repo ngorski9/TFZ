@@ -15,7 +15,15 @@ In this repo we provide the main compressor used in the related publication, inc
 
 As in the publication, we represent each tensor field as a flat triangular mesh. We use a rectilinear mesh. Our mesh takes the form of a grid of squares. Each square is further subdivided into two triangles as follows: if one of the squares is the unit square, the two triangular cells that it contains will have vertices {(0,0), (0,1), (1,0)} and {(1,0), (0,1), (1,1)}. We store the value of the tensor at each vertex of the grid, and use linear interpolation for all interior points.
 
-Our support tensor field data stores in RAW binary format. A tensor field is stored as a directory containing four files: ```A.raw```, ```B.raw```, ```C.raw```, and ```D.raw```. If $f x \mapsto \begin{bmatrix} A(x) & B(x) \\ C(x) & D(X) \end{bmatrix}$ is the tensor field, then our files respectively store the values of the scalar fields $A$, $B$, $C$, and $D$ at each vertex point. Internally, the name of the tensor field is referenced by the name of the directory.
+Our support tensor field data stores in RAW binary format. A tensor field is stored as a directory containing four files: ```A.raw```, ```B.raw```, ```C.raw```, and ```D.raw```. If 
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="figures/sf-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="figures/sf.png">
+  <img alt="Example" src="sf.png", width="200">
+</picture>
+
+is the tensor field, then our files respectively store the values of the scalar fields $A$, $B$, $C$, and $D$ at each vertex point. Internally, the name of the tensor field is referenced by the name of the directory.
 
 $A$, $B$, $C$, and $D$ should be stored as double precision floating point values stored in little endian. The scalar fields should be stored in column-major (Fortran) order.
 
