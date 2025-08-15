@@ -33,7 +33,7 @@ In the publication we worked with collections of 2D scalar fields. To work with 
 
 ## Installation
 
-Our implementation is written in pure Julia. **Recent updates to Julia's memory management system hurt the performance of our implementation. For best results, use Julia 10.4**.
+Our implementation is written in pure Julia. **Recent updates to Julia's memory management system hurt the performance of our implementation. For best results, use Julia 10.4**. Our implementation has only been tested on Linux. We believe that it would also work on macOS, but it would not work on Windows.
 
 ### Dependencies:
 
@@ -51,4 +51,50 @@ WriteVTK.jl
 
 Run ```julia tfz.jl <arguments>```. All options can be viewed by running ```julia tfz.jl -h```. We provide additional clarifications here.
 
-#### Fourth level?
+- TFZ makes a lot of system calls, so by default ```stdout``` and ```stderr``` are suppressed. To view any printouts (such as in the event of a crash), use ```-verbose```.
+
+#### Specifying Files
+
+- When specifying an input with the ```-i``` flag, list the name of the directory that contains ```A.raw```, ```B.raw```, ```C.raw```, and ```D.raw```.
+- Suppose that you specify compressed name `Z` using the `-z` flag and decompressed name `O` using the `-o` flag:
+    - If you are compressing a single slice, TFZ will create a single compressed file called `Z.tar.zst`. The decompressed file will be a directory called `O` containing ```A.raw```, ```B.raw```, ```C.raw```, and ```D.raw```.
+    - If you are compressing many slices, TFZ will create a directory called `Z` that will contain many files called ```slice_01.tar.zst```, ```slice_ot.tar.zst``` etc. corresponding to each slice that was compressed. Similarly, an output directory called `O` will be created. It will contain subdirectories called ```slice_01```, ```slice_02``` etc. each containg the ```A.raw```, ```B.raw```, ```C.raw``` and ```D.raw``` corresponding to each decompressed slice.
+    - If you are only decompressing `-z` should either specify a `.tar.zst` file corresponding to a single compressed slice, or a directory containing files named ```slice_01.tar.zst```, ```slice_02.tar.zst``` etc.
+- In order to compress multiple slices simultaneously, use ```-n_slices``` to specify how many slices are being compressed. To compress one slice out of a collection, specify which one using the ```-slice``` flag.
+    - Because Julia is 1-indexed, the first slice has index 1.
+    - To decompress a single file out of a collection, specify the name of the ```.tar.zst``` file rather than using ```-slice```.
+
+#### Experiment Flag
+
+- Use ```-experiment``` to collect data using TFZ.
+- Use the ```-csv``` flag to save the results of an experiment to a CSV file. If the CSV file already exists, a new row will be appended to the end containing the information from the current experiment.
+- By default all of the evaluation metrics reported in the paper will be collected. A limited subset of the evaluation metrics will be printed to the terminal if the ```-experiment``` flag is not set.
+    - If you only need to collect times, using ```-skipStatistics``` will skip computing most statistics, leading to faster experiment times.
+- When using ```-experiment```, you do not need to specify anything using ```-z``` or ```-o```. If either flag is omitted, a temporary file will be created for the compressed or decompressed file, respectively, and deleted at the end of the experiment.
+
+## Visualization scripts
+
+The visualization scripts can be found in the ```vis_tools``` folder. These scripts can only be used to visualize one slice at a time. However, one can set the input file equal to a collection of slices and specify a single slice to visualize. Because Julia is 1-indexed, the first slice is considered to have index 1.
+
+### hyperLIC
+
+- To run the hyperLIC script, run ```julia hyperlic.jl <arguments>```. For usage details, run ```julia hyperlic.jl -h```.
+- We use a home-built implementation of [fast-LIC](http://www.zhanpingliu.org/research/flowvis/lic/FastLIC/FastLIC.htm) adapted to vector fields.
+- In order to spread out the streamlines that we generate, we divide the domain into an $n \times n$ grid, and spread out streamlines across the different grid cells. The number of grid cells in each direction can be specified using ```-block_size```. By default this is set to 20.
+- Based on how fastLIC is implemented, the first pixels to be processed take the longest, and pixels take less time to process over the course of the algorithm.
+- Two files will be outputted, both of which are to be visualized in ParaView. One is a ```.vti``` file that contains both the hyperLIC values, as well as the Frobenius norm of each tensor. Another is a ```.vtu``` file that contains the locations of the degenerate points.
+
+### Partition Visualization
+
+- To run the visualization script, run ```julia partitions.jl <arguments>```. For usage details, run ```julia partitions.jl -h```
+- Two files will be outputted, both of which are to be visualized in ParaView. One is a ```.vti``` file that contains the following arrays:
+    - ```categorical val``` : Each mesh vertex is assigned an integer from 1-5 based on its classification in the eigenvalue manifold.
+    - ```categorical vec``` : Each mesh vertex is assigned an integer from 1-5 based on its classification in the eigenvector manifold.
+    - ```color val``` : Each mesh vertex is assigned three integers corresponding depending on its classification in the eigenvalue manifold. The integers correspond to the RGB color used to visualize that classification in the publication.
+    - ```color vec``` : Similar to ```color val``` but for the eigenvector partition.
+    - ```frobenius``` : Stores the Frobenius norm of each tensor.
+- ```color val``` and ```color vec``` can only be visualized properly by unchecking the ```Map Scalars``` option listed under ```Scalar Coloring```.
+- The other file that is outputted is a ```.vtu``` file. It contains the following arrays:
+    - ```categorical val``` and ```categorical vec``` : Same as above.
+    - ```color criticalType``` : Each point is assigned three integers corresponding to whether it is a trisector or wedge. The integers correspond to the RGB color used to visualize that type of degenerate point in the publication.
+    - ```frobenius``` : The Frobenius norm of the tensor field at that critical point.
