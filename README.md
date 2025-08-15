@@ -47,8 +47,6 @@ WriteVTK.jl
 
 ## Usage
 
-### TFZ:
-
 Run ```julia tfz.jl <arguments>```. All options can be viewed by running ```julia tfz.jl -h```. We provide additional clarifications here.
 
 - TFZ makes a lot of system calls, so by default ```stdout``` and ```stderr``` are suppressed. To view any printouts (such as in the event of a crash), use ```-verbose```.
