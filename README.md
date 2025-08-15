@@ -21,7 +21,7 @@ Our support tensor field data stores in RAW binary format. A tensor field is sto
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="figures/sf-dark.png">
   <source media="(prefers-color-scheme: light)" srcset="figures/sf.png">
-  <img alt="Example" src="sf.png", width="200">
+  <img alt="Example" src="sf.png", width="150">
 </picture>
 </p>
 
@@ -44,3 +44,11 @@ WriteVTK.jl
 ```
 
 ```WriteVTK.jl``` is only required for the visualization scripts and is not required for TFZ itself.
+
+## Usage
+
+### TFZ:
+
+Run ```julia tfz.jl <arguments>```. All options can be viewed by running ```julia tfz.jl -h```. We provide additional clarifications here.
+
+#### Fourth level?
