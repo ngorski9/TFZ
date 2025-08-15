@@ -13,7 +13,7 @@ In this repo we provide the main compressor used in the related publication, inc
 
 ### Data Format
 
-As in the publication, we represent each tensor field as a flat triangular mesh. We use a rectilinear mesh. Our mesh takes the form of a grid of squares. Each square is further subdivided into two triangles as follows: if one of the squares is the unit square, the two triangular cells that it contains will have vertices $\{(0,0), (0,1), (1,0)\}$ and $\{(1,0), (0,1), (1,1)\}$. We store the value of the tensor at each vertex of the grid, and use linear interpolation for all interior points.
+As in the publication, we represent each tensor field as a flat triangular mesh. We use a rectilinear mesh. Our mesh takes the form of a grid of squares. Each square is further subdivided into two triangles as follows: if one of the squares is the unit square, the two triangular cells that it contains will have vertices $$\{(0,0), (0,1), (1,0)\}$$ and $$\{(1,0), (0,1), (1,1)\}$$. We store the value of the tensor at each vertex of the grid, and use linear interpolation for all interior points.
 
 Our support tensor field data stores in RAW binary format. A tensor field is stored as a directory containing four files: ```A.raw```, ```B.raw```, ```C.raw```, and ```D.raw```. If $f x \mapsto \begin{bmatrix} A(x) & B(x) \\ C(x) & D(X) \end{bmatrix}$ is the tensor field, then our files respectively store the values of the scalar fields $A$, $B$, $C$, and $D$ at each vertex point. Internally, the name of the tensor field is referenced by the name of the directory.
 
@@ -25,7 +25,7 @@ In the publication we worked with collections of 2D scalar fields. To work with 
 
 Our implementation is written in pure Julia. **Recent updates to Julia's memory management system hurt the performance of our implementation. For best results, use Julia 10.4**.
 
-Dependencies:
+### Dependencies:
 
 ```
 DataStructures.jl
