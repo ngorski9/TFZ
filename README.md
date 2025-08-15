@@ -17,11 +17,13 @@ As in the publication, we represent each tensor field as a flat triangular mesh.
 
 Our support tensor field data stores in RAW binary format. A tensor field is stored as a directory containing four files: ```A.raw```, ```B.raw```, ```C.raw```, and ```D.raw```. If 
 
+<div style="text-align: center">
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="figures/sf-dark.png">
   <source media="(prefers-color-scheme: light)" srcset="figures/sf.png">
-  <img alt="Example" src="sf.png", width="200">
+  <img alt="Example" src="sf.png", width="100">
 </picture>
+</div>
 
 is the tensor field, then our files respectively store the values of the scalar fields $A$, $B$, $C$, and $D$ at each vertex point. Internally, the name of the tensor field is referenced by the name of the directory.
 
